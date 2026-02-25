@@ -2,7 +2,7 @@
 Ferrofluid classification taxonomy.
 
 Source: FEROFLUIDS_CLASS_DEFINITION.txt
-24 class codes across 5 major categories.
+30 class codes across 5 major categories.
 """
 
 from dataclasses import dataclass

@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from app import db
+from app.db.connection import transaction
+from app.services.gap_analysis import gap_summary, gap_by_five_year_periods
 from app.taxonomy import get_class_description
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,25 @@ def _ensure_output_dir():
     Path(OUTPUT_DIR).mkdir(exist_ok=True)
 
 
+def _fetch_classified_rows(doc_type: str) -> list:
+    """Shared query for fetching classified documents by type."""
+    with transaction() as conn:
+        rows = conn.execute(
+            """SELECT d.serial_number, d.year, d.title, d.original_data,
+                      c.final_primary, c.final_secondary, c.final_tertiary,
+                      c.final_reasoning, c.status,
+                      gpt.primary_code AS gpt_primary, claude.primary_code AS claude_primary
+               FROM documents d
+               JOIN classifications c ON d.serial_number = c.serial_number
+               LEFT JOIN ai_results gpt ON d.serial_number = gpt.serial_number AND gpt.model_name = 'gpt'
+               LEFT JOIN ai_results claude ON d.serial_number = claude.serial_number AND claude.model_name = 'claude'
+               WHERE d.doc_type = ? AND c.status IN ('agreed', 'human_reviewed')
+               ORDER BY d.year, c.final_primary, c.final_secondary, c.final_tertiary""",
+            (doc_type,)
+        ).fetchall()
+    return rows
+
+
 def export_classified_papers(filepath: str = None) -> str:
     """
     Goal 1: Export classified papers as CSV sorted by Year, Primary, Secondary, Tertiary.
@@ -26,20 +46,7 @@ def export_classified_papers(filepath: str = None) -> str:
     if filepath is None:
         filepath = os.path.join(OUTPUT_DIR, "classified_papers.csv")
 
-    conn = db.get_connection()
-    try:
-        rows = conn.execute(
-            """SELECT d.serial_number, d.year, d.title, d.original_data,
-                      c.final_primary, c.final_secondary, c.final_tertiary,
-                      c.final_reasoning, c.gpt_primary, c.claude_primary, c.status
-               FROM documents d
-               JOIN classifications c ON d.serial_number = c.serial_number
-               WHERE d.doc_type = 'paper' AND c.status IN ('agreed', 'human_reviewed')
-               ORDER BY d.year, c.final_primary, c.final_secondary, c.final_tertiary"""
-        ).fetchall()
-    finally:
-        conn.close()
-
+    rows = _fetch_classified_rows("paper")
     return _export_rows(rows, filepath, "papers")
 
 
@@ -49,20 +56,7 @@ def export_classified_patents(filepath: str = None) -> str:
     if filepath is None:
         filepath = os.path.join(OUTPUT_DIR, "classified_patents.csv")
 
-    conn = db.get_connection()
-    try:
-        rows = conn.execute(
-            """SELECT d.serial_number, d.year, d.title, d.original_data,
-                      c.final_primary, c.final_secondary, c.final_tertiary,
-                      c.final_reasoning, c.gpt_primary, c.claude_primary, c.status
-               FROM documents d
-               JOIN classifications c ON d.serial_number = c.serial_number
-               WHERE d.doc_type = 'patent' AND c.status IN ('agreed', 'human_reviewed')
-               ORDER BY d.year, c.final_primary, c.final_secondary, c.final_tertiary"""
-        ).fetchall()
-    finally:
-        conn.close()
-
+    rows = _fetch_classified_rows("patent")
     return _export_rows(rows, filepath, "patents")
 
 
@@ -103,8 +97,6 @@ def _export_rows(rows: list, filepath: str, label: str) -> str:
 
 def export_gap_analysis(filepath: str = None) -> str:
     """Export gap analysis as CSV."""
-    from app.services.gap_analysis import gap_summary, gap_by_five_year_periods
-
     _ensure_output_dir()
     if filepath is None:
         filepath = os.path.join(OUTPUT_DIR, "gap_analysis.csv")
@@ -130,8 +122,7 @@ def export_patent_paper_links(filepath: str = None) -> str:
     if filepath is None:
         filepath = os.path.join(OUTPUT_DIR, "patent_paper_links.csv")
 
-    conn = db.get_connection()
-    try:
+    with transaction() as conn:
         rows = conn.execute(
             """SELECT l.patent_serial, l.paper_serial, l.similarity_score,
                       dp.title AS patent_title, dp.year AS patent_year,
@@ -141,8 +132,6 @@ def export_patent_paper_links(filepath: str = None) -> str:
                JOIN documents dr ON l.paper_serial = dr.serial_number
                ORDER BY l.patent_serial, l.similarity_score DESC"""
         ).fetchall()
-    finally:
-        conn.close()
 
     df = pd.DataFrame([dict(r) for r in rows])
     df.to_csv(filepath, index=False, encoding="utf-8-sig")
@@ -156,8 +145,7 @@ def export_assignee_crossrefs(filepath: str = None) -> str:
     if filepath is None:
         filepath = os.path.join(OUTPUT_DIR, "assignee_crossrefs.csv")
 
-    conn = db.get_connection()
-    try:
+    with transaction() as conn:
         rows = conn.execute(
             """SELECT a.patent_serial, a.paper_serial, a.matched_name,
                       dp.title AS patent_title, dp.year AS patent_year,
@@ -167,8 +155,6 @@ def export_assignee_crossrefs(filepath: str = None) -> str:
                JOIN documents dr ON a.paper_serial = dr.serial_number
                ORDER BY a.matched_name, dp.year"""
         ).fetchall()
-    finally:
-        conn.close()
 
     df = pd.DataFrame([dict(r) for r in rows])
     df.to_csv(filepath, index=False, encoding="utf-8-sig")

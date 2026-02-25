@@ -1,12 +1,23 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app import db
 from app.routes import documents, classify, review, analysis, export, graph
+
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    db.init_db()
+    yield
+
 
 app = FastAPI(
     title="Ferrofluid Paper-Patent Classifier",
     description="AI-assisted classification of ferrofluid research papers and patents with gap analysis",
     version="2.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -26,8 +37,6 @@ app.include_router(graph.router)
 
 @app.get("/")
 async def root():
-    from app import db
-    db.init_db()
     counts = db.count_documents()
     return {
         "name": "Ferrofluid Paper-Patent Classifier",

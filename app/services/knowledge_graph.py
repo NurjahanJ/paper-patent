@@ -5,7 +5,7 @@ import tempfile
 import networkx as nx
 from pyvis.network import Network
 
-from app import db
+from app.db.connection import transaction
 from app.taxonomy import TAXONOMY
 
 logger = logging.getLogger(__name__)
@@ -35,8 +35,7 @@ def build_graph(include_docs: bool = False) -> nx.Graph:
     """
     graph = nx.Graph()
 
-    conn = db.get_connection()
-    try:
+    with transaction() as conn:
         # Get classification counts per class per doc_type
         rows = conn.execute(
             """SELECT d.doc_type, c.final_primary, COUNT(*) as cnt
@@ -65,8 +64,6 @@ def build_graph(include_docs: bool = False) -> nx.Graph:
                    JOIN classifications c ON d.serial_number = c.serial_number
                    WHERE c.status IN ('agreed', 'human_reviewed')"""
             ).fetchall()
-    finally:
-        conn.close()
 
     # Build class code nodes
     paper_counts = {}

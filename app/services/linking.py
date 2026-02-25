@@ -6,6 +6,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from app import db
+from app.db.connection import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +16,7 @@ def link_patents_to_papers(top_n: int = 3) -> dict:
     Goal 3 (part 2): For each patent, find at least 3 related papers
     based on abstract similarity using TF-IDF cosine similarity.
     """
-    conn = db.get_connection()
-    try:
+    with transaction() as conn:
         patents = conn.execute(
             """SELECT d.serial_number, d.abstract
                FROM documents d
@@ -32,8 +32,6 @@ def link_patents_to_papers(top_n: int = 3) -> dict:
                WHERE d.doc_type = 'paper' AND c.status IN ('agreed', 'human_reviewed')
                AND d.abstract IS NOT NULL AND d.abstract != ''"""
         ).fetchall()
-    finally:
-        conn.close()
 
     patents = [dict(r) for r in patents]
     papers = [dict(r) for r in papers]
@@ -65,6 +63,7 @@ def link_patents_to_papers(top_n: int = 3) -> dict:
 
         sim_matrix = cosine_similarity(batch_patents, paper_matrix)
 
+        link_rows = []
         for j, patent_idx in enumerate(range(i, batch_end)):
             scores = sim_matrix[j]
             top_indices = scores.argsort()[-top_n:][::-1]
@@ -72,12 +71,16 @@ def link_patents_to_papers(top_n: int = 3) -> dict:
             for paper_idx in top_indices:
                 score = float(scores[paper_idx])
                 if score > 0:
-                    db.save_paper_patent_link(
+                    link_rows.append((
                         patent_serials[patent_idx],
                         paper_serials[paper_idx],
                         round(score, 4),
-                    )
+                    ))
                     linked += 1
+
+        # Batch write per chunk
+        if link_rows:
+            db.save_paper_patent_links_batch(link_rows)
 
         if batch_end % 200 == 0 or batch_end == len(patent_serials):
             logger.info("Linking progress: %d/%d patents processed", batch_end, len(patent_serials))
@@ -92,8 +95,7 @@ def crossref_assignees() -> dict:
     Goal 4: Find patent assignees/inventors who also published papers.
     Match by normalized name comparison.
     """
-    conn = db.get_connection()
-    try:
+    with transaction() as conn:
         patents = conn.execute(
             """SELECT d.serial_number, d.authors, d.original_data,
                       c.final_primary
@@ -108,8 +110,6 @@ def crossref_assignees() -> dict:
                JOIN classifications c ON d.serial_number = c.serial_number
                WHERE d.doc_type = 'paper' AND c.status IN ('agreed', 'human_reviewed')"""
         ).fetchall()
-    finally:
-        conn.close()
 
     patents = [dict(r) for r in patents]
     papers = [dict(r) for r in papers]

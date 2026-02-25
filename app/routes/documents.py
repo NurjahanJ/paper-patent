@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException
 
 from app import db
@@ -20,13 +22,13 @@ async def get_stats():
 
 
 @router.get("/")
-async def list_documents(doc_type: str = None, limit: int = 100, offset: int = 0):
+async def list_documents(doc_type: Optional[str] = None, limit: int = 100, offset: int = 0):
     """List documents with optional type filter."""
-    docs = db.get_documents(doc_type)
+    docs, total = db.get_documents_paginated(doc_type, limit=limit, offset=offset)
     return {
-        "total": len(docs),
-        "showing": len(docs[offset:offset + limit]),
-        "documents": docs[offset:offset + limit],
+        "total": total,
+        "showing": len(docs),
+        "documents": docs,
     }
 
 

@@ -4,6 +4,7 @@ import tempfile
 import pytest
 
 from app import db
+from app.db.connection import transaction
 from app.config import settings
 
 
@@ -62,20 +63,32 @@ class TestDocumentCRUD:
         assert len(unclass) == 2
 
         # Classify P1
-        db.save_classification("P1", "gpt", 11, 13, 14, "material")
-        db.save_classification("P1", "claude", 11, 12, 14, "material")
+        db.save_ai_result("P1", "gpt", 11, 13, 14, "material")
+        db.save_ai_result("P1", "claude", 11, 12, 14, "material")
         db.finalize_classification("P1", 11, 13, 14, "agreed", "agreed")
 
         unclass = db.get_unclassified_documents()
         assert len(unclass) == 1
         assert unclass[0]["serial_number"] == "P2"
 
+    def test_paginated(self):
+        for i in range(10):
+            db.insert_document(f"P{i}", "paper", f"Paper {i}", "abs", 2020, [], None, {})
+
+        docs, total = db.get_documents_paginated(limit=3, offset=0)
+        assert total == 10
+        assert len(docs) == 3
+
+        docs, total = db.get_documents_paginated(limit=3, offset=9)
+        assert total == 10
+        assert len(docs) == 1
+
 
 class TestClassificationCRUD:
     def test_save_and_get(self):
         db.insert_document("P1", "paper", "Test", "abs", 2020, [], None, {})
-        db.save_classification("P1", "gpt", 11, 13, 14, "reason1")
-        db.save_classification("P1", "claude", 11, 12, 14, "reason2")
+        db.save_ai_result("P1", "gpt", 11, 13, 14, "reason1")
+        db.save_ai_result("P1", "claude", 11, 12, 14, "reason2")
         db.finalize_classification("P1", 11, 13, 14, "Both agreed", "agreed")
 
         c = db.get_classification("P1")
@@ -89,16 +102,42 @@ class TestClassificationCRUD:
         db.insert_document("P1", "paper", "Test1", "abs", 2020, [], None, {})
         db.insert_document("P2", "paper", "Test2", "abs", 2021, [], None, {})
 
-        db.save_classification("P1", "gpt", 11, 11, 11, "r")
+        db.save_ai_result("P1", "gpt", 11, 11, 11, "r")
         db.finalize_classification("P1", 11, 11, 11, "ok", "agreed")
 
-        db.save_classification("P2", "gpt", 11, 11, 11, "r")
+        db.save_ai_result("P2", "gpt", 11, 11, 11, "r")
         db.finalize_classification("P2", 38, 38, 38, "disagree", "disagreed")
 
         agreed = db.get_classifications_by_status("agreed")
         assert len(agreed) == 1
         disagreed = db.get_classifications_by_status("disagreed")
         assert len(disagreed) == 1
+
+    def test_atomic_transaction(self):
+        """Verify transaction rollback on failure."""
+        db.insert_document("P1", "paper", "Test", "abs", 2020, [], None, {})
+        try:
+            with transaction() as conn:
+                db.save_ai_result("P1", "gpt", 11, 11, 11, "r", conn=conn)
+                raise ValueError("Simulated failure")
+        except ValueError:
+            pass
+        # ai_result should NOT be saved due to rollback
+        c = db.get_classification("P1")
+        assert c is None
+
+    def test_any_model_name_works(self):
+        """OCP: save_ai_result accepts any model name, not just gpt/claude."""
+        db.insert_document("P1", "paper", "Test", "abs", 2020, [], None, {})
+        db.save_ai_result("P1", "gemini", 25, 26, 22, "flow comp")
+        # Should not raise; can't query by model via get_classification yet,
+        # but let's verify the row exists via direct query
+        with transaction() as conn:
+            row = conn.execute(
+                "SELECT * FROM ai_results WHERE serial_number = 'P1' AND model_name = 'gemini'"
+            ).fetchone()
+        assert row is not None
+        assert row["primary_code"] == 25
 
 
 class TestLinks:

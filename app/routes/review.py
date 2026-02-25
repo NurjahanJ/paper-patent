@@ -40,6 +40,11 @@ async def resolve_disagreement(request: ReviewRequest):
     existing = db.get_classification(request.serial_number)
     if not existing:
         raise HTTPException(status_code=404, detail="Classification not found")
+    if existing["status"] not in ("disagreed", "pending"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot review: status is '{existing['status']}', expected 'disagreed' or 'pending'"
+        )
 
     note = request.note or "Human reviewed"
     db.finalize_classification(

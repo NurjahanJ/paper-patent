@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 
-from app import db
+from app.db.connection import transaction
 from app.taxonomy import TAXONOMY, get_class_description
 
 logger = logging.getLogger(__name__)
@@ -12,41 +12,26 @@ def patent_class_frequency_by_year() -> dict:
     Goal 3: Which class has more patents, which has none, by year.
     Returns {year: {class_code: count}}.
     """
-    conn = db.get_connection()
-    try:
-        rows = conn.execute(
-            """SELECT d.year, c.final_primary, COUNT(*) as cnt
-               FROM documents d
-               JOIN classifications c ON d.serial_number = c.serial_number
-               WHERE d.doc_type = 'patent' AND c.status IN ('agreed', 'human_reviewed')
-               GROUP BY d.year, c.final_primary
-               ORDER BY d.year, c.final_primary"""
-        ).fetchall()
-    finally:
-        conn.close()
-
-    result = defaultdict(lambda: defaultdict(int))
-    for row in rows:
-        if row["year"]:
-            result[row["year"]][row["final_primary"]] = row["cnt"]
-
-    return dict(result)
+    return _class_frequency_by_year("patent")
 
 
 def paper_class_frequency_by_year() -> dict:
     """Same as above but for papers."""
-    conn = db.get_connection()
-    try:
+    return _class_frequency_by_year("paper")
+
+
+def _class_frequency_by_year(doc_type: str) -> dict:
+    """Shared implementation for class frequency by year."""
+    with transaction() as conn:
         rows = conn.execute(
             """SELECT d.year, c.final_primary, COUNT(*) as cnt
                FROM documents d
                JOIN classifications c ON d.serial_number = c.serial_number
-               WHERE d.doc_type = 'paper' AND c.status IN ('agreed', 'human_reviewed')
+               WHERE d.doc_type = ? AND c.status IN ('agreed', 'human_reviewed')
                GROUP BY d.year, c.final_primary
-               ORDER BY d.year, c.final_primary"""
+               ORDER BY d.year, c.final_primary""",
+            (doc_type,)
         ).fetchall()
-    finally:
-        conn.close()
 
     result = defaultdict(lambda: defaultdict(int))
     for row in rows:
@@ -63,8 +48,7 @@ def gap_summary() -> dict:
     - Which classes have NO patents
     - Totals per class per doc_type
     """
-    conn = db.get_connection()
-    try:
+    with transaction() as conn:
         rows = conn.execute(
             """SELECT d.doc_type, c.final_primary, COUNT(*) as cnt
                FROM documents d
@@ -72,8 +56,6 @@ def gap_summary() -> dict:
                WHERE c.status IN ('agreed', 'human_reviewed')
                GROUP BY d.doc_type, c.final_primary"""
         ).fetchall()
-    finally:
-        conn.close()
 
     paper_counts = {}
     patent_counts = {}

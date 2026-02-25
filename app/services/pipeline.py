@@ -4,6 +4,7 @@ import time
 from typing import Optional
 
 from app import db
+from app.db.connection import transaction
 from app.config import settings
 from app.services.classifier import (
     BaseClassifier,
@@ -33,16 +34,21 @@ async def classify_one(
                 claude.classify(abstract),
             )
 
-            db.save_classification(serial, "gpt",
-                                   gpt_result["primary"], gpt_result["secondary"],
-                                   gpt_result["tertiary"], gpt_result["reasoning"])
-            db.save_classification(serial, "claude",
-                                   claude_result["primary"], claude_result["secondary"],
-                                   claude_result["tertiary"], claude_result["reasoning"])
-
             final = check_consensus(gpt_result, claude_result)
-            db.finalize_classification(serial, final["primary"], final["secondary"],
-                                       final["tertiary"], final["reasoning"], final["status"])
+
+            # Atomic: save both AI results + final classification in one transaction
+            with transaction() as conn:
+                db.save_ai_result(serial, "gpt",
+                                  gpt_result["primary"], gpt_result["secondary"],
+                                  gpt_result["tertiary"], gpt_result["reasoning"],
+                                  conn=conn)
+                db.save_ai_result(serial, "claude",
+                                  claude_result["primary"], claude_result["secondary"],
+                                  claude_result["tertiary"], claude_result["reasoning"],
+                                  conn=conn)
+                db.finalize_classification(serial, final["primary"], final["secondary"],
+                                           final["tertiary"], final["reasoning"],
+                                           final["status"], conn=conn)
             return True
 
         except ClassificationError as e:
@@ -91,14 +97,17 @@ async def run_classification(
     logger.info("Starting classification: %d documents, concurrency=%d", total, concurrency)
 
     semaphore = asyncio.Semaphore(concurrency)
+    lock = asyncio.Lock()
     success = 0
     failed = 0
     start_time = time.time()
 
-    async def process(doc: dict, index: int):
+    async def process(doc: dict):
         nonlocal success, failed
         async with semaphore:
             ok = await classify_one(doc, gpt, claude)
+
+        async with lock:
             if ok:
                 success += 1
             else:
@@ -110,13 +119,13 @@ async def run_classification(
                 rate = done / elapsed if elapsed > 0 else 0
                 eta = (total - done) / rate if rate > 0 else 0
                 logger.info(
-                    "Progress: %d/%d (%.1f%%) | %.1f docs/min | ETA: %.0f min | ✓%d ✗%d",
+                    "Progress: %d/%d (%.1f%%) | %.1f docs/min | ETA: %.0f min | ok=%d err=%d",
                     done, total, 100 * done / total,
                     rate * 60, eta / 60,
                     success, failed,
                 )
 
-    tasks = [process(doc, i) for i, doc in enumerate(docs)]
+    tasks = [process(doc) for doc in docs]
     await asyncio.gather(*tasks)
 
     elapsed = time.time() - start_time
