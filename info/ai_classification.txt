@@ -1,0 +1,86 @@
+FERRO FLUIDS LITERATURE & PATENT CLASSIFICATION USING AI
+IS 421 : 2026 SPRING
+
+INPUT:
+1.	Scopus output generated with the help of NJIT Library:
+Lists Journal papers, books, book chapters, and other publications where the terms “Ferrofluids” / “magnetic fluids” appear between the years 1965 and 2025.
+Merge multiple files.
+Manually generate a column referencing each document with a unique serial number.
+This document has 4000+ entries. Stored in multiple documents. 
+Format: MS excel workbook / CSV files. 
+
+2.	Querry output generated with the help of NJIT Library:
+There are two files. They list US Patents from1965 to 2025.
+Merge multiple files.
+Manually generate a column referencing each document with a unique serial number.
+This document has 2000+ entries. Stored in multiple documents. 
+Format: MS excel workbook / CSV files. 
+
+GOALS / EXPECTED OUTCOMES:
+Goal1:
+Produce the following classified output.
+The classification output should contain
+Column	Meaning
+Serial Number	Publication identifier that you generated in the given data.
+Year	Publication year
+Title	Title text of article
+Primary Class:	Numeric class label (looks categorical) – Most probable class. 
+Primary Desc:	Description of the primary classification
+Secondary Class:	Another numeric class label (looks categorical) – Less probable class.
+Secondary Desc:	Description of the secondary classification
+Tertiary Class:	Another numeric class label (looks categorical) – Least possible class.
+Tertiary Desc:	Description of the tertiary classification
+Reasoning:	Justification text explaining classification
+
+Condition: 	    Classification to be entirely based on the ABSTRACT provided with each entry 
+    & NOT based on Keywords or Title of the entry.  
+   Primary, secondary & Tertiary classification depends on the relevance 
+   of the text description in the Abstract content.
+   If an abstract contains precisely one unique subject matter 
+   the Primary, Secondary and Tertiary class may all be the same class.  
+All other information provided in the original input should be kept with each row of the output dataset – should maintain data integrity.
+Output should be comprehensively sorted based on the following criteria taken in that order:
+i.	Publication Year
+ii.	Primary class
+iii.	Secondary class
+iv.	Tertiary class
+
+Goal 2:
+Exactly similar classification output regarding the US Patent list.
+Output should be sorted based on similar criteria:
+
+Goal 3:
+Perform a gap analysis amongst patents:  Which class has more patents – which class has no patents – which has some patents – consolidate such information by the year.
+This must be based on the Primary class of the referenced patent – reference should be based on the publication.
+Also Perform a relational dependency analysis of papers and patents.  
+For each patent, provide at least 3 references to publications/papers that relate to the patent. 
+Goal 4:
+Patent assignees who have published papers on the same topic of the Patent either before or after the Patent approval. Indicate by using Serial Number Cross reference.  
+Goal(s), other: 
+You can include any other goals that occur to your creative minds. 
+Please attach a separate statement on the rationale.
+Likely use of your output:
+Several analyses have been planned with use of your output and report to be published in a journal paper. 
+One possible chart of the type shown below may be generated for each 5 year period and discussed.  In this chart y-axis represents major class category number, x-axis represents frequency (frequency of each histogram bar is also shown to the right of histogram bar)  
+
+
+ 
+
+CLASSIFICATION CRITERIA:
+Please refer to separate document included. 
+You can also use AI to refine the classification.
+If refined, you must write a separate statement with proper justification explaininmg your 
+rationale.  
+
+REPORT:
+Submit a detailed report of around 5 pages explaining 
+•	the process you have used
+•	your reflections of the process, and the analysis  
+•	indicating anything special you performed in this analysis
+•	any new class you created, describing the rationale.
+ The example graphs shown in this instruction are based on manual analysis. 
+You are not required to generate such histograms for the report. 
+
+ACKNOWLEDGEMENTS:
+Some of your work may be used in a publication pertaining to a review on Ferrofluids very soon. 
+Any results, if used from your reports, will be appropriately acknowledged in the planned paper.

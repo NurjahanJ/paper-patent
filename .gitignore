@@ -6,5 +6,7 @@ venv/
 *.egg-info/
 dist/
 build/
-app/data/documents.json
+*.db
+.pytest_cache/
+output/
 *.html

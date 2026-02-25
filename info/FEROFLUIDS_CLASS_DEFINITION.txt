@@ -1,0 +1,42 @@
+CLASSIFICATION OF PAPERS ON FERROFLUIDS:
+11	Material	Chemistry
+12	Material	Formulation
+13	Material	Properties
+14	Material	Evaluation / Characterization
+15	Material	Manipulation, Droplets, other
+16	Material	Handling of
+		
+21	Computation	FEA
+22	Computation	CFD
+23	Computation	MATLAB
+24	Modelling	ODE, Boundary value, Two-phase, Lifting force, Magneto-optical, 
+		Dipole, Strain Energy, Susceptibility etc.
+25	Computation	Flow
+26	Computation	Heat
+27	Computation	Modelling
+28	Computation 	Stability and other
+29	Computation	Magnetic Droplets, Spin of droplet
+		
+37	Experimentation	Other than evaluation indicated in class 14 above
+38	Application	Using principles of magnetic induction
+39	Application	Medical Robotic Surgery
+40	Application	Medical (Hyperthermia, Cancer, Drug Delivery)
+41	Application	Medical (Pharmaceutical)
+42	Application	Biomedical
+43	Application	Robotics - general
+44	Application	Geology, Oil-field recovery
+45	Application	Flow
+46	Application	Heat transfer
+47	Application	Bearing, Seal, Lubricant
+48	Application	Levitation, Spin of droplets
+49	Application	Digital Micro Fluids, Damping, Physics, Environmental, Engineering,
+		Instruments to evaluate FF
+50	Review - Survey	
+51	Book / Book chapter	
+
+MAJOR CLASSES:
+1.	MATERIAL
+2.	COMPUTATION
+3.	EXPERIMENTATION
+4.	APPLICATION
+5.	REVIEW / BOOK
