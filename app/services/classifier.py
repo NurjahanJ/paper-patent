@@ -83,15 +83,19 @@ class BaseClassifier(ABC):
 
 
 class GPTClassifier(BaseClassifier):
-    def __init__(self, api_key: str, model: str = "gpt-4o"):
-        self._client = AsyncOpenAI(api_key=api_key)
+    def __init__(self, api_key: str, model: str = "gpt-4o", rate_limiter=None):
+        self._client = AsyncOpenAI(api_key=api_key, max_retries=0)
         self._model = model
+        self._rate_limiter = rate_limiter
 
     async def classify(self, abstract: str) -> dict:
         prompt = CLASSIFICATION_PROMPT.format(
             abstract=abstract,
             taxonomy=format_taxonomy_for_prompt(),
         )
+        # Estimate ~600 tokens per call (prompt + response)
+        if self._rate_limiter:
+            await self._rate_limiter.acquire(600)
         try:
             response = await self._client.chat.completions.create(
                 model=self._model,
@@ -107,15 +111,18 @@ class GPTClassifier(BaseClassifier):
 
 
 class ClaudeClassifier(BaseClassifier):
-    def __init__(self, api_key: str, model: str = "claude-sonnet-4-20250514"):
-        self._client = AsyncAnthropic(api_key=api_key)
+    def __init__(self, api_key: str, model: str = "claude-sonnet-4-20250514", rate_limiter=None):
+        self._client = AsyncAnthropic(api_key=api_key, max_retries=0)
         self._model = model
+        self._rate_limiter = rate_limiter
 
     async def classify(self, abstract: str) -> dict:
         prompt = CLASSIFICATION_PROMPT.format(
             abstract=abstract,
             taxonomy=format_taxonomy_for_prompt(),
         )
+        if self._rate_limiter:
+            await self._rate_limiter.acquire(600)
         try:
             response = await self._client.messages.create(
                 model=self._model,
