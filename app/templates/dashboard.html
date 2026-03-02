@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ferrofluid Classifier — Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f172a; --card: #1e293b; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8; --dim: #64748b;
+    --green: #4ade80; --red: #f87171; --yellow: #fbbf24;
+    --blue: #60a5fa; --purple: #c084fc; --cyan: #22d3ee;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* Navigation */
+  .nav { background: var(--card); border-bottom: 1px solid var(--border); padding: 0 2rem; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 2rem; }
+  .nav-brand { font-size: 1rem; font-weight: 600; color: var(--text); padding: 1rem 0; white-space: nowrap; }
+  .nav-links { display: flex; gap: 0; overflow-x: auto; }
+  .nav-links a { color: var(--muted); text-decoration: none; padding: 1rem 1.25rem; font-size: 0.85rem; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
+  .nav-links a:hover, .nav-links a.active { color: var(--text); border-bottom-color: var(--blue); }
+
+  /* Layout */
+  .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .section-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .section-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
+
+  /* Cards */
+  .card { background: var(--card); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border); margin-bottom: 1rem; }
+  .card-title { font-size: 0.8rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+
+  /* Stat grid */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--card); border-radius: 12px; padding: 1.25rem; border: 1px solid var(--border); text-align: center; }
+  .stat-value { font-size: 2rem; font-weight: 700; }
+  .stat-label { font-size: 0.75rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { background: #0f172a; color: var(--muted); font-weight: 600; text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  td { padding: 8px 12px; border-bottom: 1px solid #1e293b; color: var(--text); }
+  tr:hover td { background: rgba(255,255,255,0.03); }
+  .code-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+  .badge-material { background: #166534; color: #4ade80; }
+  .badge-computation { background: #1e3a5f; color: #60a5fa; }
+  .badge-experimentation { background: #713f12; color: #fbbf24; }
+  .badge-application { background: #831843; color: #f472b6; }
+  .badge-review { background: #4c1d95; color: #c084fc; }
+
+  /* Pagination */
+  .pagination { display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem; justify-content: center; }
+  .pagination button { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-size: 0.85rem; }
+  .pagination button:hover { background: var(--border); }
+  .pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .pagination span { font-size: 0.85rem; color: var(--muted); }
+
+  /* Gap chart area */
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .chart-container { position: relative; height: 400px; }
+  .gap-table-scroll { max-height: 500px; overflow-y: auto; }
+
+  /* Tags */
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 500; }
+  .tag-agreed { background: #166534; color: #4ade80; }
+  .tag-disagreed { background: #7f1d1d; color: #f87171; }
+  .tag-reviewed { background: #713f12; color: #fbbf24; }
+  .tag-both { background: #1e3a5f; color: #60a5fa; }
+  .tag-papers-only { background: #713f12; color: #fbbf24; }
+  .tag-patents-only { background: #4c1d95; color: #c084fc; }
+  .tag-empty { background: #1e1e1e; color: #64748b; }
+
+  /* Knowledge graph */
+  .graph-frame { width: 100%; height: 700px; border: 1px solid var(--border); border-radius: 8px; background: white; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .chart-row { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  /* Search */
+  .search-bar { display: flex; gap: 0.75rem; margin-bottom: 1rem; align-items: center; }
+  .search-bar input, .search-bar select { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 0.85rem; }
+  .search-bar input { flex: 1; min-width: 200px; }
+  .search-bar select { min-width: 120px; }
+
+  .empty-state { text-align: center; padding: 3rem; color: var(--dim); }
+  .loading { text-align: center; padding: 2rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">Ferrofluid Classifier</div>
+  <div class="nav-links">
+    <a href="#overview" class="active" onclick="showSection('overview')">Overview</a>
+    <a href="#papers" onclick="showSection('papers')">Goal 1: Papers</a>
+    <a href="#patents" onclick="showSection('patents')">Goal 2: Patents</a>
+    <a href="#gaps" onclick="showSection('gaps')">Goal 3a: Gap Analysis</a>
+    <a href="#links" onclick="showSection('links')">Goal 3b: Paper-Patent Links</a>
+    <a href="#crossrefs" onclick="showSection('crossrefs')">Goal 4: Assignee Crossref</a>
+    <a href="#graph" onclick="showSection('graph')">Knowledge Graph</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- OVERVIEW -->
+  <div id="overview" class="section active">
+    <h2 class="section-title">Project Overview</h2>
+    <p class="section-desc">AI-assisted classification of ferrofluid research papers and patents using GPT-4o + Claude dual consensus.</p>
+    <div class="stat-grid" id="stats-grid">
+      <div class="stat-card"><div class="stat-value" id="s-total">—</div><div class="stat-label">Total Documents</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--blue)" id="s-papers">—</div><div class="stat-label">Papers</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--purple)" id="s-patents">—</div><div class="stat-label">Patents</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--green)" id="s-agreed">—</div><div class="stat-label">Agreed</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--red)" id="s-disagreed">—</div><div class="stat-label">Disagreed</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--yellow)" id="s-reviewed">—</div><div class="stat-label">Human Reviewed</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--muted)" id="s-pending">—</div><div class="stat-label">Pending</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--cyan)" id="s-classified">—</div><div class="stat-label">Classified</div></div>
+    </div>
+
+    <div class="chart-row">
+      <div class="card">
+        <div class="card-title">Classification Consensus</div>
+        <div class="chart-container"><canvas id="chart-consensus"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Documents by Major Category</div>
+        <div class="chart-container"><canvas id="chart-categories"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card" style="text-align:center; padding:1rem;">
+      <a href="/review/ui" target="_blank" style="color:var(--yellow); text-decoration:none; font-size:0.9rem;">
+        Open Disagreement Review UI &rarr;
+      </a>
+    </div>
+  </div>
+
+  <!-- GOAL 1: PAPERS -->
+  <div id="papers" class="section">
+    <h2 class="section-title">Goal 1: Classified Papers</h2>
+    <p class="section-desc">All research papers classified by primary, secondary, and tertiary ferrofluid class codes. Sorted by Year &rarr; Primary &rarr; Secondary &rarr; Tertiary.</p>
+    <div id="papers-content"><div class="loading">Loading papers...</div></div>
+  </div>
+
+  <!-- GOAL 2: PATENTS -->
+  <div id="patents" class="section">
+    <h2 class="section-title">Goal 2: Classified Patents</h2>
+    <p class="section-desc">All US patents classified using the same taxonomy and dual-AI consensus.</p>
+    <div id="patents-content"><div class="loading">Loading patents...</div></div>
+  </div>
+
+  <!-- GOAL 3a: GAP ANALYSIS -->
+  <div id="gaps" class="section">
+    <h2 class="section-title">Goal 3a: Gap Analysis</h2>
+    <p class="section-desc">Which classes have patents vs papers, and where are the research-to-patent gaps?</p>
+    <div class="chart-row">
+      <div class="card">
+        <div class="card-title">Papers vs Patents by Class</div>
+        <div class="chart-container"><canvas id="chart-gap"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Gap Summary by 5-Year Periods (Top Classes)</div>
+        <div class="chart-container"><canvas id="chart-periods"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Gap Analysis Table</div>
+      <div class="gap-table-scroll" id="gap-table-wrap"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- GOAL 3b: LINKS -->
+  <div id="links" class="section">
+    <h2 class="section-title">Goal 3b: Patent-Paper Links</h2>
+    <p class="section-desc">Each patent linked to its top 3 most related papers via TF-IDF cosine similarity.</p>
+    <div id="links-content"><div class="loading">Loading links...</div></div>
+  </div>
+
+  <!-- GOAL 4: CROSSREFS -->
+  <div id="crossrefs" class="section">
+    <h2 class="section-title">Goal 4: Assignee Cross-Reference</h2>
+    <p class="section-desc">Patent assignees/inventors who also authored research papers on the same topic.</p>
+    <div id="crossrefs-content"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- KNOWLEDGE GRAPH -->
+  <div id="graph" class="section">
+    <h2 class="section-title">Knowledge Graph</h2>
+    <p class="section-desc">Interactive graph showing class code relationships, co-occurrence, and gaps. Red = class with papers but no patents.</p>
+    <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px;">
+      <iframe class="graph-frame" id="graph-frame" src="" frameborder="0"></iframe>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let taxonomy = {};
+const PAGE_SIZE = 50;
+const state = {
+  papers: { offset: 0, total: 0, filter: '' },
+  patents: { offset: 0, total: 0, filter: '' },
+  links: { offset: 0, total: 0 },
+};
+
+// ── Navigation ──
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  document.querySelector(`.nav-links a[href="#${id}"]`).classList.add('active');
+
+  if (id === 'papers' && !state.papers.loaded) loadClassified('papers', 'paper');
+  if (id === 'patents' && !state.patents.loaded) loadClassified('patents', 'patent');
+  if (id === 'gaps' && !state.gapsLoaded) loadGaps();
+  if (id === 'links' && !state.links.loaded) loadLinks();
+  if (id === 'crossrefs' && !state.crossrefsLoaded) loadCrossrefs();
+  if (id === 'graph' && !state.graphLoaded) { document.getElementById('graph-frame').src = '/graph/'; state.graphLoaded = true; }
+}
+
+// ── Helpers ──
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+function desc(code) {
+  const t = taxonomy[String(code)];
+  return t ? t.description : '?';
+}
+
+function majorCat(code) {
+  const t = taxonomy[String(code)];
+  return t ? t.category : 'Unknown';
+}
+
+function badgeClass(code) {
+  const cat = majorCat(code).toLowerCase();
+  if (cat.includes('material')) return 'badge-material';
+  if (cat.includes('computation')) return 'badge-computation';
+  if (cat.includes('experiment')) return 'badge-experimentation';
+  if (cat.includes('application')) return 'badge-application';
+  if (cat.includes('review')) return 'badge-review';
+  return '';
+}
+
+function codeBadge(code) {
+  return `<span class="code-badge ${badgeClass(code)}">${code}</span> ${esc(desc(code))}`;
+}
+
+function paginate(containerId, stateKey, loadFn) {
+  const s = state[stateKey];
+  const totalPages = Math.ceil(s.total / PAGE_SIZE);
+  const page = Math.floor(s.offset / PAGE_SIZE) + 1;
+  let html = `<span>Page ${page} of ${totalPages} (${s.total} total)</span>`;
+  html += `<button onclick="${loadFn}(${s.offset - PAGE_SIZE})" ${s.offset <= 0 ? 'disabled' : ''}>&laquo; Prev</button>`;
+  html += `<button onclick="${loadFn}(${s.offset + PAGE_SIZE})" ${s.offset + PAGE_SIZE >= s.total ? 'disabled' : ''}>Next &raquo;</button>`;
+  return html;
+}
+
+// ── Overview ──
+async function loadOverview() {
+  const [ov, tx] = await Promise.all([
+    fetch('/dashboard/api/overview').then(r => r.json()),
+    fetch('/dashboard/api/taxonomy').then(r => r.json()),
+  ]);
+  taxonomy = tx;
+
+  document.getElementById('s-total').textContent = ov.total.toLocaleString();
+  document.getElementById('s-papers').textContent = ov.papers.toLocaleString();
+  document.getElementById('s-patents').textContent = ov.patents.toLocaleString();
+  document.getElementById('s-agreed').textContent = ov.agreed.toLocaleString();
+  document.getElementById('s-disagreed').textContent = ov.disagreed.toLocaleString();
+  document.getElementById('s-reviewed').textContent = ov.human_reviewed.toLocaleString();
+  document.getElementById('s-pending').textContent = ov.pending.toLocaleString();
+  document.getElementById('s-classified').textContent = ov.classified.toLocaleString();
+
+  // Consensus pie
+  new Chart(document.getElementById('chart-consensus'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Agreed', 'Disagreed', 'Human Reviewed', 'Pending'],
+      datasets: [{ data: [ov.agreed, ov.disagreed, ov.human_reviewed, ov.pending],
+        backgroundColor: ['#4ade80', '#f87171', '#fbbf24', '#475569'] }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
+  });
+
+  // Category bar (load from gap data)
+  const gapData = await fetch('/dashboard/api/gap-analysis').then(r => r.json());
+  const catTotals = {};
+  for (const item of gapData.summary.by_class) {
+    const cat = item.description.split(' > ')[0];
+    catTotals[cat] = catTotals[cat] || { papers: 0, patents: 0 };
+    catTotals[cat].papers += item.papers;
+    catTotals[cat].patents += item.patents;
+  }
+  const cats = Object.keys(catTotals);
+  new Chart(document.getElementById('chart-categories'), {
+    type: 'bar',
+    data: {
+      labels: cats,
+      datasets: [
+        { label: 'Papers', data: cats.map(c => catTotals[c].papers), backgroundColor: '#60a5fa' },
+        { label: 'Patents', data: cats.map(c => catTotals[c].patents), backgroundColor: '#c084fc' },
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { labels: { color: '#94a3b8' } } } }
+  });
+}
+
+// ── Classified docs (Goal 1 & 2) ──
+async function loadClassified(section, docType, offset) {
+  if (offset === undefined) offset = 0;
+  if (offset < 0) offset = 0;
+  state[section].offset = offset;
+
+  const url = `/dashboard/api/classified?doc_type=${docType}&limit=${PAGE_SIZE}&offset=${offset}`;
+  const data = await fetch(url).then(r => r.json());
+  state[section].total = data.total;
+  state[section].loaded = true;
+
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  html += '<th>Serial</th><th>Year</th><th>Title</th><th>Primary</th><th>Secondary</th><th>Tertiary</th><th>Status</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const r of data.rows) {
+    const tag = r.status === 'agreed' ? 'tag-agreed' : 'tag-reviewed';
+    html += `<tr>
+      <td style="color:var(--dim);font-size:0.8rem">${esc(r.serial_number)}</td>
+      <td>${r.year || '—'}</td>
+      <td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.title)}">${esc(r.title)}</td>
+      <td>${codeBadge(r.final_primary)}</td>
+      <td>${codeBadge(r.final_secondary)}</td>
+      <td>${codeBadge(r.final_tertiary)}</td>
+      <td><span class="tag ${tag}">${r.status}</span></td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+
+  const loadFnName = section === 'papers' ? "loadPapers" : "loadPatents";
+  html += `<div class="pagination">${paginate(section + '-content', section, loadFnName)}</div>`;
+
+  document.getElementById(section + '-content').innerHTML = html;
+}
+
+function loadPapers(offset) { loadClassified('papers', 'paper', offset); }
+function loadPatents(offset) { loadClassified('patents', 'patent', offset); }
+
+// ── Gap Analysis (Goal 3a) ──
+async function loadGaps() {
+  const data = await fetch('/dashboard/api/gap-analysis').then(r => r.json());
+  state.gapsLoaded = true;
+
+  // Bar chart: papers vs patents per class
+  const classes = data.summary.by_class.filter(c => c.papers > 0 || c.patents > 0);
+  new Chart(document.getElementById('chart-gap'), {
+    type: 'bar',
+    data: {
+      labels: classes.map(c => c.code),
+      datasets: [
+        { label: 'Papers', data: classes.map(c => c.papers), backgroundColor: '#60a5fa' },
+        { label: 'Patents', data: classes.map(c => c.patents), backgroundColor: '#c084fc' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'x',
+      scales: { x: { ticks: { color: '#94a3b8' }, title: { display: true, text: 'Class Code', color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } },
+      plugins: { legend: { labels: { color: '#94a3b8' } } }
+    }
+  });
+
+  // 5-year period chart (show top 5 classes by total volume)
+  const periods = data.periods;
+  if (periods && periods.length > 0) {
+    const classTotals = {};
+    for (const p of periods) {
+      classTotals[p.code] = (classTotals[p.code] || 0) + p.papers + p.patents;
+    }
+    const topCodes = Object.entries(classTotals).sort((a,b) => b[1] - a[1]).slice(0, 6).map(e => +e[0]);
+    const uniquePeriods = [...new Set(periods.map(p => p.period))].sort();
+    const colors = ['#60a5fa', '#4ade80', '#f87171', '#fbbf24', '#c084fc', '#22d3ee'];
+
+    const datasets = topCodes.map((code, i) => ({
+      label: `${code}: ${desc(code)}`,
+      data: uniquePeriods.map(period => {
+        const match = periods.find(p => p.code === code && p.period === period);
+        return match ? match.papers + match.patents : 0;
+      }),
+      borderColor: colors[i], backgroundColor: colors[i] + '33', fill: false, tension: 0.3,
+    }));
+
+    new Chart(document.getElementById('chart-periods'), {
+      type: 'line',
+      data: { labels: uniquePeriods, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } },
+        plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 11 } } } }
+      }
+    });
+  }
+
+  // Gap table
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  html += '<th>Code</th><th>Description</th><th>Papers</th><th>Patents</th><th>Gap Type</th>';
+  html += '</tr></thead><tbody>';
+  for (const g of data.summary.by_class) {
+    const tagClass = 'tag-' + g.gap_type.replace('_', '-');
+    const gapLabel = g.gap_type.replace('_', ' ');
+    html += `<tr>
+      <td>${codeBadge(g.code)}</td>
+      <td>${esc(g.description)}</td>
+      <td style="text-align:right">${g.papers}</td>
+      <td style="text-align:right">${g.patents}</td>
+      <td><span class="tag ${tagClass}">${gapLabel}</span></td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('gap-table-wrap').innerHTML = html;
+}
+
+// ── Links (Goal 3b) ──
+async function loadLinks(offset) {
+  if (offset === undefined) offset = 0;
+  if (offset < 0) offset = 0;
+  state.links.offset = offset;
+
+  const data = await fetch(`/dashboard/api/links?limit=${PAGE_SIZE}&offset=${offset}`).then(r => r.json());
+  state.links.total = data.total;
+  state.links.loaded = true;
+
+  if (data.total === 0) {
+    document.getElementById('links-content').innerHTML = '<div class="empty-state">No patent-paper links found. Run analysis first.</div>';
+    return;
+  }
+
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  html += '<th>Patent</th><th>Patent Title</th><th>Year</th><th>Paper</th><th>Paper Title</th><th>Year</th><th>Similarity</th>';
+  html += '</tr></thead><tbody>';
+  for (const r of data.rows) {
+    const pct = (r.score * 100).toFixed(1);
+    const barW = Math.min(r.score * 100, 100);
+    html += `<tr>
+      <td style="color:var(--dim);font-size:0.8rem">${esc(r.patent_serial)}</td>
+      <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.patent_title)}">${esc(r.patent_title)}</td>
+      <td>${r.patent_year || '—'}</td>
+      <td style="color:var(--dim);font-size:0.8rem">${esc(r.paper_serial)}</td>
+      <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.paper_title)}">${esc(r.paper_title)}</td>
+      <td>${r.paper_year || '—'}</td>
+      <td><div style="display:flex;align-items:center;gap:6px"><div style="width:60px;height:6px;background:var(--border);border-radius:3px"><div style="width:${barW}%;height:100%;background:var(--blue);border-radius:3px"></div></div><span style="font-size:0.8rem">${pct}%</span></div></td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+  html += `<div class="pagination">${paginate('links-content', 'links', 'loadLinks')}</div>`;
+  document.getElementById('links-content').innerHTML = html;
+}
+
+// ── Crossrefs (Goal 4) ──
+async function loadCrossrefs() {
+  const data = await fetch('/dashboard/api/crossrefs').then(r => r.json());
+  state.crossrefsLoaded = true;
+
+  if (data.total === 0) {
+    document.getElementById('crossrefs-content').innerHTML = '<div class="card"><div class="empty-state"><p style="font-size:1.5rem;margin-bottom:0.5rem">No matches found</p><p style="color:var(--dim)">The patent inventor/applicant names and paper author names in the source CSV files do not share a common format, so exact name matching produced 0 results. This is a data quality limitation, not a code issue.</p></div></div>';
+    return;
+  }
+
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  html += '<th>Matched Name</th><th>Patent</th><th>Patent Title</th><th>Paper</th><th>Paper Title</th>';
+  html += '</tr></thead><tbody>';
+  for (const r of data.rows) {
+    html += `<tr>
+      <td style="font-weight:600">${esc(r.matched_name)}</td>
+      <td style="color:var(--dim);font-size:0.8rem">${esc(r.patent_serial)}</td>
+      <td>${esc(r.patent_title)}</td>
+      <td style="color:var(--dim);font-size:0.8rem">${esc(r.paper_serial)}</td>
+      <td>${esc(r.paper_title)}</td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('crossrefs-content').innerHTML = html;
+}
+
+// ── Init ──
+loadOverview();
+</script>
+</body>
+</html>
