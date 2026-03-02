@@ -83,11 +83,8 @@ async def run_classification(
     if concurrency is None:
         concurrency = settings.concurrency
 
-    # Rate limiters based on actual API tier limits (with 10% safety margin)
-    # OpenAI: 30,000 TPM -> use 27,000
-    # Anthropic: 540,000 TPM -> use 480,000
-    gpt_limiter = TokenBucketRateLimiter(capacity=27_000, window_seconds=60.0)
-    claude_limiter = TokenBucketRateLimiter(capacity=480_000, window_seconds=60.0)
+    gpt_limiter = TokenBucketRateLimiter(capacity=settings.openai_tpm_limit, window_seconds=60.0)
+    claude_limiter = TokenBucketRateLimiter(capacity=settings.anthropic_tpm_limit, window_seconds=60.0)
 
     gpt = GPTClassifier(api_key=settings.openai_api_key, rate_limiter=gpt_limiter)
     claude = ClaudeClassifier(api_key=settings.anthropic_api_key, rate_limiter=claude_limiter)

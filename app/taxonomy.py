@@ -15,7 +15,7 @@ class ClassCode:
     description: str
 
 
-# --- All 24 class codes ---
+# --- All 30 class codes ---
 
 TAXONOMY: dict[int, ClassCode] = {
     11: ClassCode(11, "Material", "Chemistry"),

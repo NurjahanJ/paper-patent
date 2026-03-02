@@ -127,7 +127,7 @@ def crossref_assignees() -> dict:
             if norm and len(norm) > 2:
                 paper_author_index[norm].append((paper["serial_number"], primary))
 
-    matches = 0
+    crossref_rows = []
     for patent in patents:
         inventors = json.loads(patent["authors"]) if patent["authors"] else []
         # Also check applicants/owners from original data
@@ -148,11 +148,19 @@ def crossref_assignees() -> dict:
                 for paper_serial, paper_primary in paper_author_index[norm]:
                     # Match if same primary class (same topic)
                     if paper_primary == patent_primary:
-                        db.save_assignee_crossref(
+                        crossref_rows.append((
                             patent["serial_number"], paper_serial, name.strip()
-                        )
-                        matches += 1
+                        ))
 
+    # Batch write all crossrefs in a single transaction
+    if crossref_rows:
+        with transaction() as conn:
+            conn.executemany(
+                "INSERT OR REPLACE INTO assignee_crossrefs VALUES (?, ?, ?)",
+                crossref_rows,
+            )
+
+    matches = len(crossref_rows)
     result = {"matches": matches, "patents_checked": len(patents), "papers_checked": len(papers)}
     logger.info("Assignee cross-reference complete: %s", result)
     return result

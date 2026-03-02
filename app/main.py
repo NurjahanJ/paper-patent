@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import db
-from app.routes import documents, classify, review, analysis, export, graph
+from app.routes import documents, classify, review, analysis, export, graph, progress, review_ui
 
 
 @asynccontextmanager
@@ -33,6 +33,8 @@ app.include_router(review.router)
 app.include_router(analysis.router)
 app.include_router(export.router)
 app.include_router(graph.router)
+app.include_router(progress.router)
+app.include_router(review_ui.router)
 
 
 @app.get("/")

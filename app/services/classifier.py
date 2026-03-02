@@ -9,6 +9,8 @@ from app.taxonomy import format_taxonomy_for_prompt, VALID_CODES
 
 logger = logging.getLogger(__name__)
 
+ESTIMATED_TOKENS_PER_CALL = 600
+
 CLASSIFICATION_PROMPT = """You are an expert classifier for ferrofluid / magnetic fluid research literature.
 
 You must classify the following document using ONLY the abstract text below.
@@ -93,9 +95,8 @@ class GPTClassifier(BaseClassifier):
             abstract=abstract,
             taxonomy=format_taxonomy_for_prompt(),
         )
-        # Estimate ~600 tokens per call (prompt + response)
         if self._rate_limiter:
-            await self._rate_limiter.acquire(600)
+            await self._rate_limiter.acquire(ESTIMATED_TOKENS_PER_CALL)
         try:
             response = await self._client.chat.completions.create(
                 model=self._model,
@@ -122,7 +123,7 @@ class ClaudeClassifier(BaseClassifier):
             taxonomy=format_taxonomy_for_prompt(),
         )
         if self._rate_limiter:
-            await self._rate_limiter.acquire(600)
+            await self._rate_limiter.acquire(ESTIMATED_TOKENS_PER_CALL)
         try:
             response = await self._client.messages.create(
                 model=self._model,

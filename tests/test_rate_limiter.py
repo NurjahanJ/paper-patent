@@ -9,7 +9,7 @@ class TestTokenBucketRateLimiter:
         """Tokens within capacity should be acquired instantly."""
         limiter = TokenBucketRateLimiter(capacity=1000, window_seconds=60.0)
         start = time.monotonic()
-        asyncio.get_event_loop().run_until_complete(limiter.acquire(500))
+        asyncio.run(limiter.acquire(500))
         elapsed = time.monotonic() - start
         assert elapsed < 0.1  # Should be near-instant
 
@@ -25,7 +25,7 @@ class TestTokenBucketRateLimiter:
             elapsed = time.monotonic() - start
             return elapsed
 
-        elapsed = asyncio.get_event_loop().run_until_complete(drain_and_wait())
+        elapsed = asyncio.run(drain_and_wait())
         assert 0.3 < elapsed < 1.0  # Should wait roughly 0.5s
 
     def test_refills_over_time(self):
@@ -40,7 +40,7 @@ class TestTokenBucketRateLimiter:
             elapsed = time.monotonic() - start
             return elapsed
 
-        elapsed = asyncio.get_event_loop().run_until_complete(test())
+        elapsed = asyncio.run(test())
         assert elapsed < 0.1  # Should be near-instant after refill
 
     def test_concurrent_acquires_are_serialized(self):
@@ -56,7 +56,7 @@ class TestTokenBucketRateLimiter:
             elapsed = time.monotonic() - start
             return elapsed
 
-        elapsed = asyncio.get_event_loop().run_until_complete(test())
+        elapsed = asyncio.run(test())
         # 1000 tokens needed, 600 available, 400 must wait for refill
         # At 600/sec refill rate, ~0.67s wait
         assert elapsed > 0.3  # Must have waited for some refill
@@ -79,6 +79,6 @@ class TestTokenBucketRateLimiter:
 
             return first_batch, wait_time
 
-        first_batch, wait_time = asyncio.get_event_loop().run_until_complete(test())
+        first_batch, wait_time = asyncio.run(test())
         assert first_batch < 1.0  # First 45 should be fast
         assert wait_time > 0.5    # 46th should wait for token refill

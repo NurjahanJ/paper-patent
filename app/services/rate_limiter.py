@@ -22,7 +22,6 @@ class TokenBucketRateLimiter:
 
     def __init__(self, capacity: int, window_seconds: float = 60.0):
         self._capacity = capacity
-        self._window = window_seconds
         self._tokens = float(capacity)
         self._last_refill = time.monotonic()
         self._lock = asyncio.Lock()
