@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classification Progress</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a; color: #e2e8f0; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; padding: 2rem;
+  }
+  h1 { font-size: 1.5rem; color: #94a3b8; margin-bottom: 1.5rem; font-weight: 400; }
+  .card {
+    background: #1e293b; border-radius: 12px; padding: 1.5rem; width: 100%;
+    max-width: 640px; margin-bottom: 1rem; border: 1px solid #334155;
+  }
+  .progress-bar-bg {
+    background: #334155; border-radius: 8px; height: 32px; overflow: hidden;
+    margin: 1rem 0; position: relative;
+  }
+  .progress-bar-fill {
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    height: 100%; border-radius: 8px; transition: width 0.8s ease;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 0.85rem; min-width: 3rem;
+  }
+  .big-number { font-size: 2.5rem; font-weight: 700; color: #f8fafc; }
+  .label { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center; }
+  .stat-value { font-size: 1.5rem; font-weight: 600; }
+  .agreed { color: #4ade80; }
+  .disagreed { color: #f87171; }
+  .reviewed { color: #fbbf24; }
+  .pending { color: #94a3b8; }
+  .papers { color: #60a5fa; }
+  .patents { color: #c084fc; }
+  .eta { color: #94a3b8; font-size: 0.9rem; text-align: center; margin-top: 0.5rem; }
+  .pulse { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4ade80; margin-right: 6px; }
+  .refresh-note { color: #475569; font-size: 0.75rem; margin-top: 1rem; }
+</style>
+</head>
+<body>
+<h1>Ferrofluid Classifier — Live Progress</h1>
+
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+    <div>
+      <div class="big-number" id="pct">—%</div>
+      <div class="label">classified</div>
+    </div>
+    <div style="text-align: right;">
+      <div class="stat-value" id="classified-of-total" style="color: #f8fafc;">—</div>
+      <div class="label">documents</div>
+    </div>
+  </div>
+  <div class="progress-bar-bg">
+    <div class="progress-bar-fill" id="bar" style="width: 0%"></div>
+  </div>
+  <div class="eta" id="eta"><span class="status-dot pulse"></span>Calculating...</div>
+</div>
+
+<div class="card">
+  <div class="label" style="margin-bottom: 0.75rem;">Dataset</div>
+  <div class="grid">
+    <div><div class="stat-value papers" id="papers">—</div><div class="label">Papers</div></div>
+    <div><div class="stat-value patents" id="patents">—</div><div class="label">Patents</div></div>
+    <div><div class="stat-value" style="color:#f8fafc" id="total">—</div><div class="label">Total</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="label" style="margin-bottom: 0.75rem;">Classification Status</div>
+  <div class="grid4">
+    <div><div class="stat-value agreed" id="agreed">—</div><div class="label">Agreed</div></div>
+    <div><div class="stat-value disagreed" id="disagreed">—</div><div class="label">Disagreed</div></div>
+    <div><div class="stat-value reviewed" id="reviewed">—</div><div class="label">Reviewed</div></div>
+    <div><div class="stat-value pending" id="pendingCount">—</div><div class="label">Pending</div></div>
+  </div>
+</div>
+
+<div class="refresh-note">Auto-refreshes every 3 seconds</div>
+
+<script>
+let prevClassified = null;
+let prevTime = null;
+
+async function update() {
+  try {
+    const r = await fetch('/progress/api');
+    const d = await r.json();
+
+    document.getElementById('pct').textContent = d.percent + '%';
+    document.getElementById('classified-of-total').textContent = d.classified.toLocaleString() + ' / ' + d.total.toLocaleString();
+    document.getElementById('bar').style.width = d.percent + '%';
+    document.getElementById('papers').textContent = d.papers.toLocaleString();
+    document.getElementById('patents').textContent = d.patents.toLocaleString();
+    document.getElementById('total').textContent = d.total.toLocaleString();
+    document.getElementById('agreed').textContent = d.agreed.toLocaleString();
+    document.getElementById('disagreed').textContent = d.disagreed.toLocaleString();
+    document.getElementById('reviewed').textContent = d.human_reviewed.toLocaleString();
+    document.getElementById('pendingCount').textContent = d.pending.toLocaleString();
+
+    const now = Date.now();
+    if (prevClassified !== null && d.classified > prevClassified) {
+      const rate = (d.classified - prevClassified) / ((now - prevTime) / 60000);
+      const eta = d.pending / rate;
+      const dot = '<span class="status-dot pulse"></span>';
+      if (d.pending === 0) {
+        document.getElementById('eta').innerHTML = dot + 'Classification complete!';
+      } else {
+        document.getElementById('eta').innerHTML = dot + 'Running — ~' + Math.round(rate) + ' docs/min — ETA: ' + Math.round(eta) + ' min remaining';
+      }
+    }
+    if (prevClassified === null || d.classified > prevClassified) {
+      prevClassified = d.classified;
+      prevTime = now;
+    }
+  } catch (e) {
+    document.getElementById('eta').innerHTML = '<span style="color:#f87171">Server not reachable</span>';
+  }
+}
+
+update();
+setInterval(update, 3000);
+</script>
+</body>
+</html>
