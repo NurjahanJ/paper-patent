@@ -91,6 +91,18 @@
 
   .empty-state { text-align: center; padding: 3rem; color: var(--dim); }
   .loading { text-align: center; padding: 2rem; color: var(--muted); }
+
+  /* Info boxes */
+  .info-box { background: #0f172a; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; line-height: 1.7; font-size: 0.88rem; color: var(--muted); }
+  .info-box h3 { color: var(--text); font-size: 0.95rem; margin-bottom: 0.5rem; font-weight: 600; }
+  .info-box p { margin-bottom: 0.6rem; }
+  .info-box p:last-child { margin-bottom: 0; }
+  .info-box strong { color: var(--text); }
+  .info-box ul { margin: 0.4rem 0 0.6rem 1.25rem; }
+  .info-box ul li { margin-bottom: 0.25rem; }
+  .info-box .legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; }
+  .info-box .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; }
+  .info-box .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -114,6 +126,25 @@
   <div id="overview" class="section active">
     <h2 class="section-title">Project Overview</h2>
     <p class="section-desc">AI-assisted classification of ferrofluid research papers and patents using GPT-4o + Claude dual consensus.</p>
+    <div class="info-box">
+      <h3>About This Project</h3>
+      <p>This system classifies ~4,500 ferrofluid / magnetic fluid research documents (papers and US patents) into <strong>30 predefined class codes</strong> across 5 major categories: Material, Computation, Experimentation, Application, and Review/Book.</p>
+      <p>Each document is classified by <strong>two independent AI models</strong> (OpenAI GPT-4o and Anthropic Claude Sonnet) based solely on its abstract text. Each model assigns a Primary (most relevant), Secondary, and Tertiary class code along with reasoning.</p>
+      <h3>Understanding the Stats</h3>
+      <ul>
+        <li><strong>Agreed</strong> &mdash; Both AI models chose the same primary class code. The classification is automatically accepted.</li>
+        <li><strong>Disagreed</strong> &mdash; The models chose different primary codes. These need human review to decide which is correct.</li>
+        <li><strong>Human Reviewed</strong> &mdash; A human has manually resolved the disagreement and selected the final classification.</li>
+        <li><strong>Pending</strong> &mdash; Documents that have not yet been classified (no abstract, or not yet processed).</li>
+        <li><strong>Classified</strong> &mdash; Total documents that have been through the AI pipeline (agreed + disagreed + human reviewed).</li>
+      </ul>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div> Agreed</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div> Disagreed</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div> Human Reviewed</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#475569"></div> Pending</div>
+      </div>
+    </div>
     <div class="stat-grid" id="stats-grid">
       <div class="stat-card"><div class="stat-value" id="s-total">—</div><div class="stat-label">Total Documents</div></div>
       <div class="stat-card"><div class="stat-value" style="color:var(--blue)" id="s-papers">—</div><div class="stat-label">Papers</div></div>
@@ -146,21 +177,63 @@
   <!-- GOAL 1: PAPERS -->
   <div id="papers" class="section">
     <h2 class="section-title">Goal 1: Classified Papers</h2>
-    <p class="section-desc">All research papers classified by primary, secondary, and tertiary ferrofluid class codes. Sorted by Year &rarr; Primary &rarr; Secondary &rarr; Tertiary.</p>
+    <div class="info-box">
+      <h3>What is Goal 1?</h3>
+      <p>Classify every research paper from the Scopus dataset into the 30-code ferrofluid taxonomy. The output is a sorted CSV preserving all original columns from the source data, with added classification columns.</p>
+      <h3>How to Read This Table</h3>
+      <ul>
+        <li><strong>Serial</strong> &mdash; Unique identifier (P1, P2, ...). "P" = paper.</li>
+        <li><strong>Year</strong> &mdash; Publication year.</li>
+        <li><strong>Title</strong> &mdash; Paper title (hover to see full text).</li>
+        <li><strong>Primary Class</strong> &mdash; The most relevant class code assigned to this paper. This is the main classification.</li>
+        <li><strong>Secondary Class</strong> &mdash; The second most relevant class code.</li>
+        <li><strong>Tertiary Class</strong> &mdash; The third most relevant class code. If a paper covers only one clear subject, all three may be the same.</li>
+        <li><strong>Status</strong> &mdash; "agreed" means both AI models agreed on the primary code; "human_reviewed" means a human resolved a disagreement.</li>
+      </ul>
+      <p>Color-coded badges show the major category: <span style="color:#4ade80">green = Material</span>, <span style="color:#60a5fa">blue = Computation</span>, <span style="color:#fbbf24">orange = Experimentation</span>, <span style="color:#f472b6">pink = Application</span>, <span style="color:#c084fc">purple = Review/Book</span>.</p>
+      <p>Sorted by: Year &rarr; Primary Class &rarr; Secondary Class &rarr; Tertiary Class. Only finalized documents (agreed or human-reviewed) appear here. Unresolved disagreements are excluded until reviewed.</p>
+    </div>
     <div id="papers-content"><div class="loading">Loading papers...</div></div>
   </div>
 
   <!-- GOAL 2: PATENTS -->
   <div id="patents" class="section">
     <h2 class="section-title">Goal 2: Classified Patents</h2>
-    <p class="section-desc">All US patents classified using the same taxonomy and dual-AI consensus.</p>
+    <div class="info-box">
+      <h3>What is Goal 2?</h3>
+      <p>Classify every US patent from the WIPO/Derwent datasets (1969&ndash;present) into the same 30-code ferrofluid taxonomy used for papers. Two patent CSV files are combined: patents from 1969&ndash;2009 and 2010&ndash;present.</p>
+      <h3>How to Read This Table</h3>
+      <ul>
+        <li><strong>Serial</strong> &mdash; Unique identifier (PT1, PT2, ...). "PT" = patent.</li>
+        <li><strong>Year</strong> &mdash; Publication year of the patent.</li>
+        <li><strong>Title</strong> &mdash; Patent title.</li>
+        <li><strong>Primary / Secondary / Tertiary Class</strong> &mdash; Same classification system as papers. The AI reads only the patent abstract to assign codes.</li>
+        <li><strong>Status</strong> &mdash; Same as papers: "agreed" or "human_reviewed".</li>
+      </ul>
+      <p>This table uses the same format, sort order, and badge colors as the papers table. Comparing papers and patents by their class codes is how we identify research-to-patent gaps (Goal 3a).</p>
+    </div>
     <div id="patents-content"><div class="loading">Loading patents...</div></div>
   </div>
 
   <!-- GOAL 3a: GAP ANALYSIS -->
   <div id="gaps" class="section">
     <h2 class="section-title">Goal 3a: Gap Analysis</h2>
-    <p class="section-desc">Which classes have patents vs papers, and where are the research-to-patent gaps?</p>
+    <div class="info-box">
+      <h3>What is Gap Analysis?</h3>
+      <p>Gap analysis answers the question: <strong>"Where does research exist but patents don't, and vice versa?"</strong> For each of the 30 class codes, we count how many papers and patents were classified into that class, then identify the gaps.</p>
+      <h3>Charts</h3>
+      <ul>
+        <li><strong>Papers vs Patents by Class (bar chart)</strong> &mdash; Each bar pair shows how many papers (blue) and patents (purple) fall into a given class code. Tall blue bars with no purple = research with no patent activity.</li>
+        <li><strong>5-Year Periods (line chart)</strong> &mdash; Tracks the top 6 most active class codes over time in 5-year buckets, showing how research and patent activity has evolved over decades.</li>
+      </ul>
+      <h3>Gap Type Legend</h3>
+      <ul>
+        <li><strong>both</strong> &mdash; The class has at least one paper AND at least one patent. Active in both research and industry.</li>
+        <li><strong>papers only</strong> &mdash; Research exists but no patents have been filed. This is a <strong>commercialization gap</strong> &mdash; potential opportunity for new patents.</li>
+        <li><strong>patents only</strong> &mdash; Patents exist but no research papers. Rare; suggests industry activity without published academic research.</li>
+        <li><strong>empty</strong> &mdash; No documents of either type in this class.</li>
+      </ul>
+    </div>
     <div class="chart-row">
       <div class="card">
         <div class="card-title">Papers vs Patents by Class</div>
@@ -180,21 +253,50 @@
   <!-- GOAL 3b: LINKS -->
   <div id="links" class="section">
     <h2 class="section-title">Goal 3b: Patent-Paper Links</h2>
-    <p class="section-desc">Each patent linked to its top 3 most related papers via TF-IDF cosine similarity.</p>
+    <div class="info-box">
+      <h3>What is Patent-Paper Linking?</h3>
+      <p>For each classified patent, we find the <strong>3 most related research papers</strong> based on the textual similarity of their abstracts. This creates a relational dependency between the patent and paper datasets.</p>
+      <h3>How It Works</h3>
+      <p>We use <strong>TF-IDF (Term Frequency&ndash;Inverse Document Frequency)</strong> to convert every abstract into a numeric vector, then compute <strong>cosine similarity</strong> between each patent and all papers. The top 3 papers with the highest similarity score are linked to each patent.</p>
+      <h3>How to Read This Table</h3>
+      <ul>
+        <li><strong>Patent / Paper</strong> &mdash; The serial numbers and titles of the linked documents.</li>
+        <li><strong>Similarity</strong> &mdash; A score from 0% to 100%. Higher = more similar abstracts. A score above 20% generally indicates meaningful topical overlap. Scores above 40% indicate strong similarity.</li>
+      </ul>
+      <p>Each patent appears up to 3 times (once per linked paper), sorted by similarity score descending.</p>
+    </div>
     <div id="links-content"><div class="loading">Loading links...</div></div>
   </div>
 
   <!-- GOAL 4: CROSSREFS -->
   <div id="crossrefs" class="section">
     <h2 class="section-title">Goal 4: Assignee Cross-Reference</h2>
-    <p class="section-desc">Patent assignees/inventors who also authored research papers on the same topic.</p>
+    <div class="info-box">
+      <h3>What is Assignee Cross-Referencing?</h3>
+      <p>This goal identifies <strong>individuals who appear as both patent inventors/assignees AND research paper authors</strong> working on the same ferrofluid topic (same primary class code). These people bridge academia and industry.</p>
+      <h3>How It Works</h3>
+      <p>We extract inventor names from patents (including Applicants and Owners columns) and author names from papers. Names are normalized (lowercase, "Last, First" &rarr; "first last") and matched. A match is recorded only if the person worked on the same primary class in both their patent and paper.</p>
+      <h3>Why 0 Matches?</h3>
+      <p>The patent dataset uses inventor names in a different format (often abbreviated or organization names) than the paper dataset (full author names with initials). This formatting mismatch prevents exact string matching from finding overlaps. Fuzzy name matching or manual curation would be needed to improve results.</p>
+    </div>
     <div id="crossrefs-content"><div class="loading">Loading...</div></div>
   </div>
 
   <!-- KNOWLEDGE GRAPH -->
   <div id="graph" class="section">
     <h2 class="section-title">Knowledge Graph</h2>
-    <p class="section-desc">Interactive graph showing class code relationships, co-occurrence, and gaps. Red = class with papers but no patents.</p>
+    <div class="info-box">
+      <h3>What is the Knowledge Graph?</h3>
+      <p>An interactive network visualization that shows how the 30 ferrofluid class codes relate to each other across the entire dataset.</p>
+      <h3>How to Read It</h3>
+      <ul>
+        <li><strong>Square nodes</strong> &mdash; Each square represents a class code. Its size reflects how many documents are in that class (bigger = more documents).</li>
+        <li><strong>Node colors</strong> &mdash; Colored by major category: <span style="color:#4CAF50">green = Material</span>, <span style="color:#2196F3">blue = Computation</span>, <span style="color:#FF9800">orange = Experimentation</span>, <span style="color:#E91E63">pink = Application</span>, <span style="color:#9C27B0">purple = Review/Book</span>.</li>
+        <li><strong style="color:#FF5252">Red nodes</strong> &mdash; These are GAP classes: they have research papers but NO patents. These represent potential commercialization opportunities.</li>
+        <li><strong>Gray edges</strong> &mdash; Lines connecting two class codes indicate co-occurrence &mdash; documents that have one class as primary and another as secondary. Thicker edges = more co-occurring documents.</li>
+      </ul>
+      <p>You can drag nodes, zoom in/out, and hover over any node to see detailed stats (paper count, patent count, description). Classes that cluster together share common topics.</p>
+    </div>
     <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px;">
       <iframe class="graph-frame" id="graph-frame" src="" frameborder="0"></iframe>
     </div>
