@@ -107,6 +107,115 @@ async def dashboard_crossrefs():
     return {"total": len(rows), "rows": [dict(r) for r in rows]}
 
 
+@router.get("/dashboard/api/results")
+async def dashboard_results():
+    """Comprehensive results data for the Results page."""
+    counts = db.count_documents()
+    with transaction() as conn:
+        agreed = conn.execute("SELECT COUNT(*) FROM classifications WHERE status = 'agreed'").fetchone()[0]
+        disagreed = conn.execute("SELECT COUNT(*) FROM classifications WHERE status = 'disagreed'").fetchone()[0]
+        human_reviewed = conn.execute("SELECT COUNT(*) FROM classifications WHERE status = 'human_reviewed'").fetchone()[0]
+
+        # Top primary classes for papers
+        top_paper_classes = conn.execute(
+            """SELECT c.final_primary AS code, COUNT(*) AS cnt
+               FROM classifications c JOIN documents d ON c.serial_number = d.serial_number
+               WHERE d.doc_type = 'paper' AND c.status IN ('agreed','human_reviewed')
+               GROUP BY c.final_primary ORDER BY cnt DESC LIMIT 10"""
+        ).fetchall()
+
+        # Top primary classes for patents
+        top_patent_classes = conn.execute(
+            """SELECT c.final_primary AS code, COUNT(*) AS cnt
+               FROM classifications c JOIN documents d ON c.serial_number = d.serial_number
+               WHERE d.doc_type = 'patent' AND c.status IN ('agreed','human_reviewed')
+               GROUP BY c.final_primary ORDER BY cnt DESC LIMIT 10"""
+        ).fetchall()
+
+        # Disagreement analysis: most common GPT vs Claude disagreement pairs
+        disagreement_pairs = conn.execute(
+            """SELECT gpt.primary_code AS gpt_code, claude.primary_code AS claude_code, COUNT(*) AS cnt
+               FROM classifications c
+               JOIN ai_results gpt ON c.serial_number = gpt.serial_number AND gpt.model_name = 'gpt'
+               JOIN ai_results claude ON c.serial_number = claude.serial_number AND claude.model_name = 'claude'
+               WHERE c.status IN ('disagreed','human_reviewed')
+               GROUP BY gpt.primary_code, claude.primary_code
+               ORDER BY cnt DESC LIMIT 15"""
+        ).fetchall()
+
+        # For human-reviewed: how often did the human pick GPT vs Claude vs something else
+        human_picked_gpt = conn.execute(
+            """SELECT COUNT(*) FROM classifications c
+               JOIN ai_results gpt ON c.serial_number = gpt.serial_number AND gpt.model_name = 'gpt'
+               WHERE c.status = 'human_reviewed' AND c.final_primary = gpt.primary_code"""
+        ).fetchone()[0]
+        human_picked_claude = conn.execute(
+            """SELECT COUNT(*) FROM classifications c
+               JOIN ai_results claude ON c.serial_number = claude.serial_number AND claude.model_name = 'claude'
+               WHERE c.status = 'human_reviewed' AND c.final_primary = claude.primary_code"""
+        ).fetchone()[0]
+
+        # Year range
+        year_range = conn.execute(
+            "SELECT MIN(year), MAX(year) FROM documents WHERE year IS NOT NULL AND year > 0"
+        ).fetchone()
+
+        # Papers by decade
+        papers_by_decade = conn.execute(
+            """SELECT (d.year / 10) * 10 AS decade, COUNT(*) AS cnt
+               FROM documents d JOIN classifications c ON d.serial_number = c.serial_number
+               WHERE d.doc_type = 'paper' AND d.year > 0 AND c.status IN ('agreed','human_reviewed')
+               GROUP BY decade ORDER BY decade"""
+        ).fetchall()
+
+        # Patents by decade
+        patents_by_decade = conn.execute(
+            """SELECT (d.year / 10) * 10 AS decade, COUNT(*) AS cnt
+               FROM documents d JOIN classifications c ON d.serial_number = c.serial_number
+               WHERE d.doc_type = 'patent' AND d.year > 0 AND c.status IN ('agreed','human_reviewed')
+               GROUP BY decade ORDER BY decade"""
+        ).fetchall()
+
+        # Link stats
+        total_links = conn.execute("SELECT COUNT(*) FROM paper_patent_links").fetchone()[0]
+        avg_similarity = conn.execute("SELECT AVG(similarity_score) FROM paper_patent_links").fetchone()[0]
+        max_similarity = conn.execute("SELECT MAX(similarity_score) FROM paper_patent_links").fetchone()[0]
+
+        # Crossref count
+        total_crossrefs = conn.execute("SELECT COUNT(*) FROM assignee_crossrefs").fetchone()[0]
+
+    # Gap summary
+    gaps = gap_summary()
+    papers_only_classes = [c for c in gaps["by_class"] if c["gap_type"] == "papers_only"]
+    both_classes = [c for c in gaps["by_class"] if c["gap_type"] == "both"]
+    empty_classes = [c for c in gaps["by_class"] if c["gap_type"] == "empty"]
+
+    return {
+        "counts": counts,
+        "agreed": agreed,
+        "disagreed": disagreed,
+        "human_reviewed": human_reviewed,
+        "agreement_rate": round(agreed / (agreed + disagreed + human_reviewed) * 100, 1) if (agreed + disagreed + human_reviewed) > 0 else 0,
+        "top_paper_classes": [dict(r) for r in top_paper_classes],
+        "top_patent_classes": [dict(r) for r in top_patent_classes],
+        "disagreement_pairs": [dict(r) for r in disagreement_pairs],
+        "human_picked_gpt": human_picked_gpt,
+        "human_picked_claude": human_picked_claude,
+        "human_picked_other": human_reviewed - human_picked_gpt - human_picked_claude,
+        "year_range": {"min": year_range[0], "max": year_range[1]} if year_range else None,
+        "papers_by_decade": [dict(r) for r in papers_by_decade],
+        "patents_by_decade": [dict(r) for r in patents_by_decade],
+        "total_links": total_links,
+        "avg_similarity": round(avg_similarity * 100, 1) if avg_similarity else 0,
+        "max_similarity": round(max_similarity * 100, 1) if max_similarity else 0,
+        "total_crossrefs": total_crossrefs,
+        "papers_only_classes": papers_only_classes,
+        "both_classes": both_classes,
+        "empty_classes": empty_classes,
+        "classes_with_no_patents": gaps["classes_with_no_patents"],
+    }
+
+
 @router.get("/dashboard/api/taxonomy")
 async def dashboard_taxonomy():
     """Taxonomy lookup for the frontend."""

@@ -111,6 +111,7 @@
   <div class="nav-brand">Ferrofluid Classifier</div>
   <div class="nav-links">
     <a href="#overview" class="active" onclick="showSection('overview')">Overview</a>
+    <a href="#results" onclick="showSection('results')">Results</a>
     <a href="#papers" onclick="showSection('papers')">Goal 1: Papers</a>
     <a href="#patents" onclick="showSection('patents')">Goal 2: Patents</a>
     <a href="#gaps" onclick="showSection('gaps')">Goal 3a: Gap Analysis</a>
@@ -175,6 +176,13 @@
         Open Disagreement Review UI &rarr;
       </a>
     </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="section">
+    <h2 class="section-title">Results &amp; Findings</h2>
+    <p class="section-desc">A plain-English summary of everything this project found &mdash; what the classification showed, what the disagreements tell us, where the gaps are, and what each goal produced.</p>
+    <div id="results-content"><div class="loading">Loading results...</div></div>
   </div>
 
   <!-- GOAL 1: PAPERS -->
@@ -325,6 +333,7 @@ function showSection(id) {
   document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
   document.querySelector(`.nav-links a[href="#${id}"]`).classList.add('active');
 
+  if (id === 'results' && !state.resultsLoaded) loadResults();
   if (id === 'papers' && !state.papers.loaded) loadClassified('papers', 'paper');
   if (id === 'patents' && !state.patents.loaded) loadClassified('patents', 'patent');
   if (id === 'gaps' && !state.gapsLoaded) loadGaps();
@@ -592,6 +601,200 @@ async function loadCrossrefs() {
   }
   html += '</tbody></table></div>';
   document.getElementById('crossrefs-content').innerHTML = html;
+}
+
+// ── Results ──
+async function loadResults() {
+  const data = await fetch('/dashboard/api/results').then(r => r.json());
+  state.resultsLoaded = true;
+
+  const total = data.counts.total;
+  const finalized = data.agreed + data.human_reviewed;
+  const totalClassified = data.agreed + data.disagreed + data.human_reviewed;
+
+  let html = '';
+
+  // ── Section 1: Classification Results ──
+  html += `<div class="card">
+    <div class="card-title">Classification Results</div>
+    <div class="info-box" style="margin-bottom:0">
+      <h3>How did the classification go?</h3>
+      <p>We started with <strong>${total.toLocaleString()} documents</strong> &mdash; ${data.counts.papers.toLocaleString()} research papers and ${data.counts.patents.toLocaleString()} US patents, spanning from ${data.year_range ? data.year_range.min : '?'} to ${data.year_range ? data.year_range.max : '?'}.</p>
+      <p>Two AI assistants independently read the summary of each document and assigned it to one of 30 ferrofluid topics. Out of the ${totalClassified.toLocaleString()} documents they processed:</p>
+      <ul>
+        <li><strong>${data.agreed.toLocaleString()} (${data.agreement_rate}%)</strong> &mdash; Both AIs agreed on the main topic. These were accepted automatically.</li>
+        <li><strong>${data.disagreed.toLocaleString()}</strong> &mdash; The AIs disagreed and still need a human to decide.</li>
+        <li><strong>${data.human_reviewed.toLocaleString()}</strong> &mdash; A human has already reviewed the disagreement and made the final call.</li>
+      </ul>
+      <p>Right now, <strong>${finalized.toLocaleString()} documents have a final classification</strong> (the ones where both AIs agreed plus the ones a human has reviewed). The remaining ${data.disagreed.toLocaleString()} disagreements are waiting for human review.</p>
+    </div>
+  </div>`;
+
+  // ── Section 2: Most Popular Topics ──
+  html += `<div class="card">
+    <div class="card-title">Most Popular Topics</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="info-box" style="margin-bottom:0">
+        <h3>Top Paper Topics</h3>
+        <p>The most common topics among classified research papers:</p>
+        <ol style="margin-left:1.25rem;">`;
+  for (const c of data.top_paper_classes) {
+    html += `<li><strong>${c.cnt} papers</strong> &mdash; Topic ${c.code}: ${esc(desc(c.code))}</li>`;
+  }
+  html += `</ol></div>
+      <div class="info-box" style="margin-bottom:0">
+        <h3>Top Patent Topics</h3>
+        <p>The most common topics among classified patents:</p>
+        <ol style="margin-left:1.25rem;">`;
+  for (const c of data.top_patent_classes) {
+    html += `<li><strong>${c.cnt} patents</strong> &mdash; Topic ${c.code}: ${esc(desc(c.code))}</li>`;
+  }
+  html += `</ol></div></div></div>`;
+
+  // ── Section 3: Research Over Time ──
+  html += `<div class="card">
+    <div class="card-title">Research Over Time</div>
+    <div class="info-box" style="margin-bottom:0">
+      <h3>When were these documents published?</h3>
+      <p>Ferrofluid research spans several decades. Here's how papers and patents are distributed over time:</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;">
+      <div class="info-box" style="margin-bottom:0">
+        <h3>Papers by Decade</h3>`;
+  for (const d of data.papers_by_decade) {
+    html += `<p><strong>${d.decade}s:</strong> ${d.cnt.toLocaleString()} papers</p>`;
+  }
+  html += `</div><div class="info-box" style="margin-bottom:0">
+        <h3>Patents by Decade</h3>`;
+  for (const d of data.patents_by_decade) {
+    html += `<p><strong>${d.decade}s:</strong> ${d.cnt.toLocaleString()} patents</p>`;
+  }
+  html += `</div></div></div>`;
+
+  // ── Section 4: Disagreement Analysis ──
+  html += `<div class="card">
+    <div class="card-title">What Were the Disagreements About?</div>
+    <div class="info-box">
+      <h3>Why did the AIs disagree?</h3>
+      <p>When two AIs read the same document and pick different topics, it usually means the document touches on <strong>more than one subject</strong>. For example, a paper about "computer simulation of ferrofluid flow in a pipe" could be classified as either Computer Modeling or Application/Engineering &mdash; depending on whether you focus on the method or the use case.</p>
+      <p>The most common disagreements are between topics that are closely related or that overlap in subject matter. Below are the most frequent disagreement patterns:</p>
+    </div>
+    <div class="table-wrap" style="margin-bottom:1rem;">
+      <table>
+        <thead><tr><th>AI #1 Picked</th><th>AI #2 Picked</th><th>How Often</th><th>What This Means</th></tr></thead>
+        <tbody>`;
+  for (const p of data.disagreement_pairs) {
+    const d1 = desc(p.gpt_code);
+    const d2 = desc(p.claude_code);
+    const cat1 = majorCat(p.gpt_code);
+    const cat2 = majorCat(p.claude_code);
+    const sameCat = cat1 === cat2;
+    const explanation = sameCat
+      ? `Both topics are in the <strong>${esc(cat1)}</strong> category &mdash; these are closely related subjects, so it makes sense the AIs found it hard to choose between them.`
+      : `These topics are in different categories (<strong>${esc(cat1)}</strong> vs <strong>${esc(cat2)}</strong>), which means the document likely covers multiple distinct subjects.`;
+    html += `<tr>
+      <td>${codeBadge(p.gpt_code)}</td>
+      <td>${codeBadge(p.claude_code)}</td>
+      <td style="text-align:center"><strong>${p.cnt}</strong> times</td>
+      <td style="font-size:0.82rem;color:var(--muted)">${explanation}</td>
+    </tr>`;
+  }
+  html += `</tbody></table></div>`;
+
+  // Human review breakdown
+  if (data.human_reviewed > 0) {
+    const gptPct = Math.round(data.human_picked_gpt / data.human_reviewed * 100);
+    const claudePct = Math.round(data.human_picked_claude / data.human_reviewed * 100);
+    const otherPct = 100 - gptPct - claudePct;
+    html += `<div class="info-box" style="margin-bottom:0">
+      <h3>When a human reviewed the disagreements, who was right more often?</h3>
+      <p>Out of the <strong>${data.human_reviewed.toLocaleString()}</strong> disagreements that have been reviewed by a human:</p>
+      <ul>
+        <li><strong>${data.human_picked_gpt.toLocaleString()} times (${gptPct}%)</strong> &mdash; The human agreed with AI #1 (GPT).</li>
+        <li><strong>${data.human_picked_claude.toLocaleString()} times (${claudePct}%)</strong> &mdash; The human agreed with AI #2 (Claude).</li>
+        <li><strong>${data.human_picked_other.toLocaleString()} times (${otherPct}%)</strong> &mdash; The human picked a completely different topic that neither AI suggested.</li>
+      </ul>
+      <p>${gptPct > claudePct ? 'AI #1 (GPT) was right more often in disagreements.' : claudePct > gptPct ? 'AI #2 (Claude) was right more often in disagreements.' : 'Both AIs were right about equally often.'}</p>
+    </div>`;
+  }
+  html += `</div>`;
+
+  // ── Section 5: Gap Analysis Results ──
+  const gapCount = data.papers_only_classes.length;
+  const bothCount = data.both_classes.length;
+  const emptyCount = data.empty_classes.length;
+  html += `<div class="card">
+    <div class="card-title">Goal 3a: Gap Analysis &mdash; What Did We Find?</div>
+    <div class="info-box">
+      <h3>The big picture</h3>
+      <p>Out of 30 topics, here is how papers and patents are distributed:</p>
+      <ul>
+        <li><strong>${bothCount} topics</strong> have both papers AND patents &mdash; research and industry are both active in these areas.</li>
+        <li><strong style="color:var(--yellow)">${gapCount} topics</strong> have research papers but <strong>no patents at all</strong>. These are the opportunity gaps &mdash; areas where scientists are working but no one has tried to commercialize or patent the ideas yet.</li>
+        <li><strong>${emptyCount} topics</strong> have no papers or patents in our dataset.</li>
+      </ul>
+      <h3>Which topics have research but no patents?</h3>
+      <p>These ${gapCount} topics represent areas where academic research exists but no one has filed a patent. Each one could be an opportunity for a new invention or product:</p>
+      <ul>`;
+  for (const c of data.papers_only_classes) {
+    html += `<li><strong>Topic ${c.code}</strong> (${c.papers} papers) &mdash; ${esc(c.description)}</li>`;
+  }
+  html += `</ul></div></div>`;
+
+  // ── Section 6: Patent-Paper Links Results ──
+  html += `<div class="card">
+    <div class="card-title">Goal 3b: Patent-Paper Links &mdash; What Did We Find?</div>
+    <div class="info-box" style="margin-bottom:0">
+      <h3>Connecting patents to related research</h3>
+      <p>For each patent, the system found the 3 most related research papers by comparing their written summaries. In total:</p>
+      <ul>
+        <li><strong>${data.total_links.toLocaleString()} links</strong> were created between patents and papers.</li>
+        <li>The <strong>average similarity</strong> between linked patents and papers is <strong>${data.avg_similarity}%</strong>.</li>
+        <li>The <strong>strongest match</strong> found had a similarity of <strong>${data.max_similarity}%</strong>.</li>
+      </ul>
+      <p>These links help answer the question: "Which research papers are most closely related to this patent?" You can browse all the links in the <strong>Goal 3b: Paper-Patent Links</strong> tab.</p>
+    </div>
+  </div>`;
+
+  // ── Section 7: Assignee Cross-Reference Results ──
+  html += `<div class="card">
+    <div class="card-title">Goal 4: Assignee Cross-Reference &mdash; What Did We Find?</div>
+    <div class="info-box" style="margin-bottom:0">
+      <h3>Looking for people who both research and patent</h3>
+      <p>We looked for individuals who appear as both a patent inventor and a research paper author on the same ferrofluid topic.</p>
+      <p><strong>Result: ${data.total_crossrefs} matches found.</strong></p>
+      ${data.total_crossrefs === 0 ? `<p>The patent files and paper files store names in very different ways (for example, "Smith J" vs "John Smith"), so the system couldn't confidently match any names. This doesn't mean there are no people working in both areas &mdash; it just means the data isn't formatted consistently enough for automatic matching.</p><p>To find these people, the names would need to be cleaned up by hand or a more flexible name-matching approach would need to be used.</p>` : `<p>These individuals bridge the gap between academic research and patented inventions. Browse the full list in the <strong>Goal 4: Assignee Crossref</strong> tab.</p>`}
+    </div>
+  </div>`;
+
+  // ── Section 8: Knowledge Graph Summary ──
+  html += `<div class="card">
+    <div class="card-title">Knowledge Graph &mdash; The Big Picture</div>
+    <div class="info-box" style="margin-bottom:0">
+      <h3>What does the knowledge graph show?</h3>
+      <p>The knowledge graph is an interactive map of all 30 ferrofluid topics and how they connect. It shows:</p>
+      <ul>
+        <li><strong>Which topics are most popular</strong> (bigger boxes = more documents).</li>
+        <li><strong>Which topics are related</strong> (connected by lines when documents share both topics).</li>
+        <li><strong>Where the gaps are</strong> (red boxes = topics with research but no patents).</li>
+      </ul>
+      <p>You can explore it in the <strong>Knowledge Graph</strong> tab. Click and drag boxes to rearrange, scroll to zoom, and hover for details.</p>
+    </div>
+  </div>`;
+
+  // ── Section 9: What's Left To Do ──
+  if (data.disagreed > 0) {
+    html += `<div class="card" style="border-color:var(--yellow)">
+      <div class="card-title" style="color:var(--yellow)">What's Left To Do?</div>
+      <div class="info-box" style="margin-bottom:0">
+        <p>There are still <strong>${data.disagreed.toLocaleString()} documents</strong> where the two AIs disagreed and a human hasn't reviewed them yet. Until those are resolved, they won't appear in the papers/patents tables or be counted in the gap analysis.</p>
+        <p>Once all disagreements are reviewed, you can re-run the analysis to get updated results that include every document.</p>
+        <p style="margin-top:0.75rem"><a href="/review/ui" target="_blank" style="color:var(--yellow)">Open the Review Tool to resolve disagreements &rarr;</a></p>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('results-content').innerHTML = html;
 }
 
 // ── Init ──
