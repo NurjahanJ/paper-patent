@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from app import db
+from app.db.connection import transaction
 from app.taxonomy import VALID_CODES
 
 router = APIRouter(prefix="/review", tags=["review"])
@@ -19,12 +20,32 @@ class ReviewRequest(BaseModel):
 @router.get("/pending")
 async def list_disagreements():
     """List all documents where GPT and Claude disagreed."""
-    disagreed = db.get_classifications_by_status("disagreed")
-    results = []
-    for c in disagreed:
-        doc = db.get_document(c["serial_number"])
-        results.append({"document": doc, "classification": c})
-    return {"count": len(results), "items": results}
+    with transaction() as conn:
+        rows = conn.execute(
+            """SELECT d.serial_number, d.doc_type, d.title, d.abstract, d.year,
+                      d.authors, d.source,
+                      c.final_primary, c.final_secondary, c.final_tertiary,
+                      c.final_reasoning, c.status,
+                      gpt.primary_code AS gpt_primary, gpt.reasoning AS gpt_reasoning,
+                      claude.primary_code AS claude_primary, claude.reasoning AS claude_reasoning
+               FROM classifications c
+               JOIN documents d ON c.serial_number = d.serial_number
+               LEFT JOIN ai_results gpt ON c.serial_number = gpt.serial_number AND gpt.model_name = 'gpt'
+               LEFT JOIN ai_results claude ON c.serial_number = claude.serial_number AND claude.model_name = 'claude'
+               WHERE c.status = 'disagreed'
+               ORDER BY d.year, d.serial_number"""
+        ).fetchall()
+
+    items = []
+    for r in rows:
+        r = dict(r)
+        doc = {k: r[k] for k in ("serial_number", "doc_type", "title", "abstract", "year", "authors", "source")}
+        classification = {k: r[k] for k in ("serial_number", "final_primary", "final_secondary",
+                          "final_tertiary", "final_reasoning", "status",
+                          "gpt_primary", "gpt_reasoning", "claude_primary", "claude_reasoning")}
+        items.append({"document": doc, "classification": classification})
+
+    return {"count": len(items), "items": items}
 
 
 @router.post("/resolve")

@@ -12,7 +12,7 @@ from app.db.classifications import (
     finalize_classification,
     get_classification,
     get_classifications_by_status,
-    get_all_classified,
+    get_finalized_classifications,
 )
 from app.db.links import (
     save_paper_patent_link,
@@ -36,7 +36,7 @@ __all__ = [
     "finalize_classification",
     "get_classification",
     "get_classifications_by_status",
-    "get_all_classified",
+    "get_finalized_classifications",
     "save_paper_patent_link",
     "save_paper_patent_links_batch",
     "save_assignee_crossref",

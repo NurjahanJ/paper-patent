@@ -10,4 +10,4 @@ build/
 .pytest_cache/
 output/
 *.html
-info/
+!app/templates/*.html

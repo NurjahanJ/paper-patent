@@ -48,9 +48,7 @@ class TestClassifyOne:
         gpt = FakeClassifier(primary=11, secondary=13, tertiary=14, reasoning="gpt says material")
         claude = FakeClassifier(primary=11, secondary=12, tertiary=14, reasoning="claude says material")
 
-        ok = asyncio.get_event_loop().run_until_complete(
-            classify_one(doc, gpt, claude, retries=1)
-        )
+        ok = asyncio.run(classify_one(doc, gpt, claude, retries=1))
         assert ok is True
 
         c = db.get_classification("P1")
@@ -67,9 +65,7 @@ class TestClassifyOne:
         gpt = FakeClassifier(primary=11)
         claude = FakeClassifier(primary=38)
 
-        ok = asyncio.get_event_loop().run_until_complete(
-            classify_one(doc, gpt, claude, retries=1)
-        )
+        ok = asyncio.run(classify_one(doc, gpt, claude, retries=1))
         assert ok is True
 
         c = db.get_classification("P2")
@@ -82,9 +78,7 @@ class TestClassifyOne:
         gpt = FailingClassifier()
         claude = FakeClassifier(primary=11)
 
-        ok = asyncio.get_event_loop().run_until_complete(
-            classify_one(doc, gpt, claude, retries=1)
-        )
+        ok = asyncio.run(classify_one(doc, gpt, claude, retries=1))
         assert ok is False
 
         c = db.get_classification("P3")
@@ -98,9 +92,7 @@ class TestClassifyOne:
         gpt = FakeClassifier(primary=25, secondary=26, tertiary=22)
         claude = FakeClassifier(primary=25, secondary=21, tertiary=28)
 
-        ok = asyncio.get_event_loop().run_until_complete(
-            classify_one(doc, gpt, claude, retries=1)
-        )
+        ok = asyncio.run(classify_one(doc, gpt, claude, retries=1))
         assert ok is True
 
         c = db.get_classification("P4")
@@ -129,15 +121,11 @@ class TestRunClassification:
             lambda **kw: FakeClassifier(primary=38),
         )
 
-        result = asyncio.get_event_loop().run_until_complete(
-            run_classification(concurrency=1)
-        )
+        result = asyncio.run(run_classification(concurrency=1))
         assert result["total"] == 1  # Only P2
         assert result["success"] == 1
 
     def test_empty_returns_zero(self):
-        result = asyncio.get_event_loop().run_until_complete(
-            run_classification(concurrency=1)
-        )
+        result = asyncio.run(run_classification(concurrency=1))
         assert result["total"] == 0
         assert result["success"] == 0

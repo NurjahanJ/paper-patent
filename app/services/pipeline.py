@@ -13,6 +13,7 @@ from app.services.classifier import (
     GPTClassifier,
 )
 from app.services.consensus import check_consensus
+from app.services.rate_limiter import TokenBucketRateLimiter
 
 logger = logging.getLogger(__name__)
 
@@ -82,8 +83,11 @@ async def run_classification(
     if concurrency is None:
         concurrency = settings.concurrency
 
-    gpt = GPTClassifier(api_key=settings.openai_api_key)
-    claude = ClaudeClassifier(api_key=settings.anthropic_api_key)
+    gpt_limiter = TokenBucketRateLimiter(capacity=settings.openai_tpm_limit, window_seconds=60.0)
+    claude_limiter = TokenBucketRateLimiter(capacity=settings.anthropic_tpm_limit, window_seconds=60.0)
+
+    gpt = GPTClassifier(api_key=settings.openai_api_key, rate_limiter=gpt_limiter)
+    claude = ClaudeClassifier(api_key=settings.anthropic_api_key, rate_limiter=claude_limiter)
 
     docs = db.get_unclassified_documents(doc_type)
     if limit:
@@ -96,37 +100,35 @@ async def run_classification(
 
     logger.info("Starting classification: %d documents, concurrency=%d", total, concurrency)
 
-    semaphore = asyncio.Semaphore(concurrency)
-    lock = asyncio.Lock()
     success = 0
     failed = 0
     start_time = time.time()
 
-    async def process(doc: dict):
-        nonlocal success, failed
-        async with semaphore:
-            ok = await classify_one(doc, gpt, claude)
+    # Process in fixed-size batches to prevent task pile-up on rate limits
+    for batch_start in range(0, total, concurrency):
+        batch = docs[batch_start:batch_start + concurrency]
 
-        async with lock:
-            if ok:
+        results = await asyncio.gather(
+            *[classify_one(doc, gpt, claude) for doc in batch],
+            return_exceptions=True,
+        )
+
+        for r in results:
+            if r is True:
                 success += 1
             else:
                 failed += 1
 
-            done = success + failed
-            if done % 50 == 0 or done == total:
-                elapsed = time.time() - start_time
-                rate = done / elapsed if elapsed > 0 else 0
-                eta = (total - done) / rate if rate > 0 else 0
-                logger.info(
-                    "Progress: %d/%d (%.1f%%) | %.1f docs/min | ETA: %.0f min | ok=%d err=%d",
-                    done, total, 100 * done / total,
-                    rate * 60, eta / 60,
-                    success, failed,
-                )
-
-    tasks = [process(doc) for doc in docs]
-    await asyncio.gather(*tasks)
+        done = success + failed
+        elapsed = time.time() - start_time
+        rate = done / elapsed if elapsed > 0 else 0
+        eta = (total - done) / rate if rate > 0 else 0
+        logger.info(
+            "Progress: %d/%d (%.1f%%) | %.1f docs/min | ETA: %.0f min | ok=%d err=%d",
+            done, total, 100 * done / total,
+            rate * 60, eta / 60,
+            success, failed,
+        )
 
     elapsed = time.time() - start_time
     result = {

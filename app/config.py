@@ -12,7 +12,9 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     db_path: str = "ferrofluids.db"
-    concurrency: int = 15
+    concurrency: int = 10
+    openai_tpm_limit: int = 27_000
+    anthropic_tpm_limit: int = 480_000
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

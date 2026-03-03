@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ferrofluid Classifier — Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f172a; --card: #1e293b; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8; --dim: #64748b;
+    --green: #4ade80; --red: #f87171; --yellow: #fbbf24;
+    --blue: #60a5fa; --purple: #c084fc; --cyan: #22d3ee;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* Navigation */
+  .nav { background: var(--card); border-bottom: 1px solid var(--border); padding: 0 2rem; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 2rem; }
+  .nav-brand { font-size: 1rem; font-weight: 600; color: var(--text); padding: 1rem 0; white-space: nowrap; }
+  .nav-links { display: flex; gap: 0; overflow-x: auto; }
+  .nav-links a { color: var(--muted); text-decoration: none; padding: 1rem 1.25rem; font-size: 0.85rem; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
+  .nav-links a:hover, .nav-links a.active { color: var(--text); border-bottom-color: var(--blue); }
+
+  /* Layout */
+  .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .section-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .section-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
+
+  /* Cards */
+  .card { background: var(--card); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border); margin-bottom: 1rem; }
+  .card-title { font-size: 0.8rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+
+  /* Stat grid */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--card); border-radius: 12px; padding: 1.25rem; border: 1px solid var(--border); text-align: center; }
+  .stat-value { font-size: 2rem; font-weight: 700; }
+  .stat-label { font-size: 0.75rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { background: #0f172a; color: var(--muted); font-weight: 600; text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  td { padding: 8px 12px; border-bottom: 1px solid #1e293b; color: var(--text); }
+  tr:hover td { background: rgba(255,255,255,0.03); }
+  .code-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+  .badge-material { background: #166534; color: #4ade80; }
+  .badge-computation { background: #1e3a5f; color: #60a5fa; }
+  .badge-experimentation { background: #713f12; color: #fbbf24; }
+  .badge-application { background: #831843; color: #f472b6; }
+  .badge-review { background: #4c1d95; color: #c084fc; }
+
+  /* Pagination */
+  .pagination { display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem; justify-content: center; }
+  .pagination button { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-size: 0.85rem; }
+  .pagination button:hover { background: var(--border); }
+  .pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .pagination span { font-size: 0.85rem; color: var(--muted); }
+
+  /* Gap chart area */
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .chart-container { position: relative; height: 400px; }
+  .gap-table-scroll { max-height: 500px; overflow-y: auto; }
+
+  /* Tags */
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 500; }
+  .tag-agreed { background: #166534; color: #4ade80; }
+  .tag-disagreed { background: #7f1d1d; color: #f87171; }
+  .tag-reviewed { background: #713f12; color: #fbbf24; }
+  .tag-both { background: #1e3a5f; color: #60a5fa; }
+  .tag-papers-only { background: #713f12; color: #fbbf24; }
+  .tag-patents-only { background: #4c1d95; color: #c084fc; }
+  .tag-empty { background: #1e1e1e; color: #64748b; }
+
+  /* Knowledge graph */
+  .graph-frame { width: 100%; height: 700px; border: 1px solid var(--border); border-radius: 8px; background: white; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .chart-row { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  /* Search */
+  .search-bar { display: flex; gap: 0.75rem; margin-bottom: 1rem; align-items: center; }
+  .search-bar input, .search-bar select { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 0.85rem; }
+  .search-bar input { flex: 1; min-width: 200px; }
+  .search-bar select { min-width: 120px; }
+
+  .empty-state { text-align: center; padding: 3rem; color: var(--dim); }
+  .loading { text-align: center; padding: 2rem; color: var(--muted); }
+
+  /* Info boxes */
+  .info-box { background: #0f172a; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; line-height: 1.7; font-size: 0.88rem; color: var(--muted); }
+  .info-box h3 { color: var(--text); font-size: 0.95rem; margin-bottom: 0.5rem; font-weight: 600; }
+  .info-box p { margin-bottom: 0.6rem; }
+  .info-box p:last-child { margin-bottom: 0; }
+  .info-box strong { color: var(--text); }
+  .info-box ul { margin: 0.4rem 0 0.6rem 1.25rem; }
+  .info-box ul li { margin-bottom: 0.25rem; }
+  .info-box .legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; }
+  .info-box .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; }
+  .info-box .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">Ferrofluid Classifier</div>
+  <div class="nav-links">
+    <a href="#overview" class="active" onclick="showSection('overview')">Overview</a>
+    <a href="#results" onclick="showSection('results')">Results</a>
+    <a href="#papers" onclick="showSection('papers')">Goal 1: Papers</a>
+    <a href="#patents" onclick="showSection('patents')">Goal 2: Patents</a>
+    <a href="#gaps" onclick="showSection('gaps')">Goal 3a: Gap Analysis</a>
+    <a href="#links" onclick="showSection('links')">Goal 3b: Paper-Patent Links</a>
+    <a href="#crossrefs" onclick="showSection('crossrefs')">Goal 4: Assignee Crossref</a>
+    <a href="#graph" onclick="showSection('graph')">Knowledge Graph</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- OVERVIEW -->
+  <div id="overview" class="section active">
+    <h2 class="section-title">Project Overview</h2>
+    <p class="section-desc">A complete view of all ferrofluid research papers and patents, organized and categorized by topic.</p>
+    <div class="info-box">
+      <h3>What is this project?</h3>
+      <p>We have about <strong>4,500 documents</strong> related to ferrofluids (magnetic fluids) &mdash; a mix of published research papers and US patents. The goal is to <strong>sort every document into one of 30 topic categories</strong> so we can see what areas have been studied, what has been patented, and where the gaps are.</p>
+      <p>To do this sorting, we used <strong>two separate AI assistants</strong> that each read the summary of every document and independently decided which topic it belongs to. When both AIs picked the same topic, we accepted that answer automatically. When they disagreed, a human stepped in to make the final call.</p>
+      <h3>What do the numbers mean?</h3>
+      <ul>
+        <li><strong>Total Documents</strong> &mdash; The complete number of papers and patents in the system.</li>
+        <li><strong>Papers</strong> &mdash; Published research articles from academic journals.</li>
+        <li><strong>Patents</strong> &mdash; US patent filings related to ferrofluids.</li>
+        <li><strong>Agreed</strong> &mdash; Both AIs picked the same topic. These are automatically accepted.</li>
+        <li><strong>Disagreed</strong> &mdash; The two AIs picked different topics. A human needs to decide which one is right.</li>
+        <li><strong>Human Reviewed</strong> &mdash; A human has already looked at the disagreement and made the final decision.</li>
+        <li><strong>Pending</strong> &mdash; Documents that haven't been categorized yet.</li>
+        <li><strong>Classified</strong> &mdash; All documents that have been through the process (whether the AIs agreed, disagreed, or a human reviewed them).</li>
+      </ul>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div> Agreed</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div> Disagreed</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div> Human Reviewed</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#475569"></div> Pending</div>
+      </div>
+    </div>
+    <div class="stat-grid" id="stats-grid">
+      <div class="stat-card"><div class="stat-value" id="s-total">—</div><div class="stat-label">Total Documents</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--blue)" id="s-papers">—</div><div class="stat-label">Papers</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--purple)" id="s-patents">—</div><div class="stat-label">Patents</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--green)" id="s-agreed">—</div><div class="stat-label">Agreed</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--red)" id="s-disagreed">—</div><div class="stat-label">Disagreed</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--yellow)" id="s-reviewed">—</div><div class="stat-label">Human Reviewed</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--muted)" id="s-pending">—</div><div class="stat-label">Pending</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--cyan)" id="s-classified">—</div><div class="stat-label">Classified</div></div>
+    </div>
+
+    <div class="chart-row">
+      <div class="card">
+        <div class="card-title">Classification Consensus</div>
+        <div class="chart-container"><canvas id="chart-consensus"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Documents by Major Category</div>
+        <div class="chart-container"><canvas id="chart-categories"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card" style="text-align:center; padding:1rem;">
+      <a href="/review/ui" target="_blank" style="color:var(--yellow); text-decoration:none; font-size:0.9rem;">
+        Open Disagreement Review UI &rarr;
+      </a>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="section">
+    <h2 class="section-title">Results &amp; Findings</h2>
+    <p class="section-desc">A plain-English summary of everything this project found &mdash; what the classification showed, what the disagreements tell us, where the gaps are, and what each goal produced.</p>
+    <div id="results-content"><div class="loading">Loading results...</div></div>
+  </div>
+
+  <!-- GOAL 1: PAPERS -->
+  <div id="papers" class="section">
+    <h2 class="section-title">Goal 1: Classified Papers</h2>
+    <div class="info-box">
+      <h3>What is this?</h3>
+      <p>Every research paper has been sorted into a ferrofluid topic. This table shows the result &mdash; you can see <strong>which topic each paper was placed into</strong>, when it was published, and whether the two AIs agreed or a human made the final call.</p>
+      <h3>What do the columns mean?</h3>
+      <ul>
+        <li><strong>Serial</strong> &mdash; A short ID for each paper (like P1, P2, P3...).</li>
+        <li><strong>Year</strong> &mdash; When the paper was published.</li>
+        <li><strong>Title</strong> &mdash; The name of the paper. Hover your mouse over it to see the full title.</li>
+        <li><strong>Primary</strong> &mdash; The <strong>main topic</strong> this paper is about. This is the most important classification.</li>
+        <li><strong>Secondary</strong> &mdash; The second-most relevant topic.</li>
+        <li><strong>Tertiary</strong> &mdash; The third-most relevant topic. If a paper only covers one subject, all three may be the same number.</li>
+        <li><strong>Status</strong> &mdash; "agreed" = both AIs picked the same answer. "human_reviewed" = a person decided.</li>
+      </ul>
+      <h3>What do the colors mean?</h3>
+      <p>Each topic belongs to a broader category, shown by color: <span style="color:#4ade80">green = Materials &amp; Properties</span>, <span style="color:#60a5fa">blue = Computer Modeling</span>, <span style="color:#fbbf24">orange = Experiments &amp; Measurements</span>, <span style="color:#f472b6">pink = Real-World Applications</span>, <span style="color:#c084fc">purple = Reviews &amp; Books</span>.</p>
+      <p>The table is sorted by year (oldest first), then by topic number. Only papers with a final decision appear here &mdash; unresolved disagreements are not shown until a human reviews them.</p>
+    </div>
+    <div id="papers-content"><div class="loading">Loading papers...</div></div>
+  </div>
+
+  <!-- GOAL 2: PATENTS -->
+  <div id="patents" class="section">
+    <h2 class="section-title">Goal 2: Classified Patents</h2>
+    <div class="info-box">
+      <h3>What is this?</h3>
+      <p>Just like the papers, every US patent related to ferrofluids has been sorted into one of the 30 topics. Patents go back to 1969 and include filings up to the present day.</p>
+      <h3>What do the columns mean?</h3>
+      <ul>
+        <li><strong>Serial</strong> &mdash; A short ID for each patent (like PT1, PT2, PT3...).</li>
+        <li><strong>Year</strong> &mdash; When the patent was filed or published.</li>
+        <li><strong>Title</strong> &mdash; The name of the patent.</li>
+        <li><strong>Primary / Secondary / Tertiary</strong> &mdash; The top 3 topics this patent relates to, same numbering system as the papers.</li>
+        <li><strong>Status</strong> &mdash; Same as papers: "agreed" or "human_reviewed".</li>
+      </ul>
+      <p>By putting papers and patents into the same topic system, we can directly compare them &mdash; that's how we find the gaps shown in Goal 3a.</p>
+    </div>
+    <div id="patents-content"><div class="loading">Loading patents...</div></div>
+  </div>
+
+  <!-- GOAL 3a: GAP ANALYSIS -->
+  <div id="gaps" class="section">
+    <h2 class="section-title">Goal 3a: Gap Analysis</h2>
+    <div class="info-box">
+      <h3>What is this?</h3>
+      <p>Now that every paper and patent has a topic, we can ask: <strong>"Where has research been done but nobody has filed a patent?"</strong> and the other way around. These mismatches are called <strong>gaps</strong>.</p>
+      <p>For example, if a topic has 50 research papers but zero patents, that's a gap &mdash; it means scientists are studying it but no one has tried to turn it into a product or invention yet. That could be an opportunity.</p>
+      <h3>How to read the charts</h3>
+      <ul>
+        <li><strong>Bar chart (left)</strong> &mdash; For each topic number, the <span style="color:#60a5fa">blue bar</span> shows how many papers there are and the <span style="color:#c084fc">purple bar</span> shows how many patents. If you see a blue bar with no purple bar next to it, that topic has research but no patents.</li>
+        <li><strong>Line chart (right)</strong> &mdash; Shows how the most popular topics have grown or declined over time, grouped into 5-year periods. This helps you see trends.</li>
+      </ul>
+      <h3>What do the labels in the table mean?</h3>
+      <ul>
+        <li><strong>both</strong> &mdash; This topic has at least one paper AND at least one patent. Research and industry are both active here.</li>
+        <li><strong>papers only</strong> &mdash; Research papers exist but no patents. This is an <strong>opportunity gap</strong> &mdash; the science is there but nobody has patented it yet.</li>
+        <li><strong>patents only</strong> &mdash; Patents exist but no research papers. This is uncommon.</li>
+        <li><strong>empty</strong> &mdash; No papers or patents in this topic.</li>
+      </ul>
+    </div>
+    <div class="chart-row">
+      <div class="card">
+        <div class="card-title">Papers vs Patents by Class</div>
+        <div class="chart-container"><canvas id="chart-gap"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Gap Summary by 5-Year Periods (Top Classes)</div>
+        <div class="chart-container"><canvas id="chart-periods"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Gap Analysis Table</div>
+      <div class="gap-table-scroll" id="gap-table-wrap"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- GOAL 3b: LINKS -->
+  <div id="links" class="section">
+    <h2 class="section-title">Goal 3b: Patent-Paper Links</h2>
+    <div class="info-box">
+      <h3>What is this?</h3>
+      <p>For every patent, we found the <strong>3 research papers that are most closely related</strong> to it. This helps answer the question: "Which research might have led to or inspired this patent?"</p>
+      <h3>How did we find the matches?</h3>
+      <p>The system compared the written summaries of every patent against every paper and measured how similar the words and phrases are. The more words two documents share (especially uncommon, specific words), the higher the similarity score.</p>
+      <h3>What do the columns mean?</h3>
+      <ul>
+        <li><strong>Patent / Paper</strong> &mdash; The ID and title of the patent on the left, and the matching paper on the right.</li>
+        <li><strong>Similarity</strong> &mdash; How closely related the two documents are, shown as a percentage. <strong>Higher is better.</strong> Above 20% means they share meaningful overlap. Above 40% means they are very closely related.</li>
+      </ul>
+      <p>Each patent shows up to 3 times &mdash; once for each of its top matching papers, with the best match first.</p>
+    </div>
+    <div id="links-content"><div class="loading">Loading links...</div></div>
+  </div>
+
+  <!-- GOAL 4: CROSSREFS -->
+  <div id="crossrefs" class="section">
+    <h2 class="section-title">Goal 4: Assignee Cross-Reference</h2>
+    <div class="info-box">
+      <h3>What is this?</h3>
+      <p>This section looks for <strong>people who appear in both worlds</strong> &mdash; someone who is listed as an inventor on a patent AND as an author on a research paper, working on the same ferrofluid topic. These people are interesting because they bridge the gap between academic research and real-world inventions.</p>
+      <h3>How does it work?</h3>
+      <p>The system takes all the inventor names from patents and all the author names from papers, then looks for matching names. A match only counts if the person worked on the same topic in both their patent and their paper.</p>
+      <h3>Why are there no matches?</h3>
+      <p>The patent files and paper files store names in very different ways. For example, a patent might list "Smith J" while a paper might list "John Smith" or "J. Smith". Because the names are formatted so differently, the system can't tell they're the same person. To fix this, the names would need to be cleaned up by hand or matched using more advanced name-comparison methods.</p>
+    </div>
+    <div id="crossrefs-content"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- KNOWLEDGE GRAPH -->
+  <div id="graph" class="section">
+    <h2 class="section-title">Knowledge Graph</h2>
+    <div class="info-box">
+      <h3>What is this?</h3>
+      <p>This is an interactive map that shows <strong>how the 30 ferrofluid topics connect to each other</strong>. It's like a web where related topics are linked together.</p>
+      <h3>How to read it</h3>
+      <ul>
+        <li><strong>Each box</strong> is one topic. Bigger boxes mean more documents are in that topic.</li>
+        <li><strong>Colors</strong> show which broad category the topic belongs to: <span style="color:#4CAF50">green = Materials</span>, <span style="color:#2196F3">blue = Computer Modeling</span>, <span style="color:#FF9800">orange = Experiments</span>, <span style="color:#E91E63">pink = Applications</span>, <span style="color:#9C27B0">purple = Reviews &amp; Books</span>.</li>
+        <li><strong style="color:#FF5252">Red boxes</strong> are the gaps &mdash; topics that have research papers but NO patents. These could be opportunities for new inventions.</li>
+        <li><strong>Lines between boxes</strong> mean some documents belong to both topics. Thicker lines = more documents in common.</li>
+      </ul>
+      <p>You can click and drag the boxes around, scroll to zoom in or out, and hover over any box to see more details about that topic.</p>
+    </div>
+    <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px;">
+      <iframe class="graph-frame" id="graph-frame" src="" frameborder="0"></iframe>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let taxonomy = {};
+const PAGE_SIZE = 50;
+const state = {
+  papers: { offset: 0, total: 0, filter: '' },
+  patents: { offset: 0, total: 0, filter: '' },
+  links: { offset: 0, total: 0 },
+};
+
+// ── Navigation ──
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  document.querySelector(`.nav-links a[href="#${id}"]`).classList.add('active');
+
+  if (id === 'results' && !state.resultsLoaded) loadResults();
+  if (id === 'papers' && !state.papers.loaded) loadClassified('papers', 'paper');
+  if (id === 'patents' && !state.patents.loaded) loadClassified('patents', 'patent');
+  if (id === 'gaps' && !state.gapsLoaded) loadGaps();
+  if (id === 'links' && !state.links.loaded) loadLinks();
+  if (id === 'crossrefs' && !state.crossrefsLoaded) loadCrossrefs();
+  if (id === 'graph' && !state.graphLoaded) { document.getElementById('graph-frame').src = '/graph/'; state.graphLoaded = true; }
+}
+
+// ── Helpers ──
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+function desc(code) {
+  const t = taxonomy[String(code)];
+  return t ? t.description : '?';
+}
+
+function majorCat(code) {
+  const t = taxonomy[String(code)];
+  return t ? t.category : 'Unknown';
+}
+
+function badgeClass(code) {
+  const cat = majorCat(code).toLowerCase();
+  if (cat.includes('material')) return 'badge-material';
+  if (cat.includes('computation')) return 'badge-computation';
+  if (cat.includes('experiment')) return 'badge-experimentation';
+  if (cat.includes('application')) return 'badge-application';
+  if (cat.includes('review')) return 'badge-review';
+  return '';
+}
+
+function codeBadge(code) {
+  return `<span class="code-badge ${badgeClass(code)}">${code}</span> ${esc(desc(code))}`;
+}
+
+function paginate(containerId, stateKey, loadFn) {
+  const s = state[stateKey];
+  const totalPages = Math.ceil(s.total / PAGE_SIZE);
+  const page = Math.floor(s.offset / PAGE_SIZE) + 1;
+  let html = `<span>Page ${page} of ${totalPages} (${s.total} total)</span>`;
+  html += `<button onclick="${loadFn}(${s.offset - PAGE_SIZE})" ${s.offset <= 0 ? 'disabled' : ''}>&laquo; Prev</button>`;
+  html += `<button onclick="${loadFn}(${s.offset + PAGE_SIZE})" ${s.offset + PAGE_SIZE >= s.total ? 'disabled' : ''}>Next &raquo;</button>`;
+  return html;
+}
+
+// ── Overview ──
+async function loadOverview() {
+  const [ov, tx] = await Promise.all([
+    fetch('/dashboard/api/overview').then(r => r.json()),
+    fetch('/dashboard/api/taxonomy').then(r => r.json()),
+  ]);
+  taxonomy = tx;
+
+  document.getElementById('s-total').textContent = ov.total.toLocaleString();
+  document.getElementById('s-papers').textContent = ov.papers.toLocaleString();
+  document.getElementById('s-patents').textContent = ov.patents.toLocaleString();
+  document.getElementById('s-agreed').textContent = ov.agreed.toLocaleString();
+  document.getElementById('s-disagreed').textContent = ov.disagreed.toLocaleString();
+  document.getElementById('s-reviewed').textContent = ov.human_reviewed.toLocaleString();
+  document.getElementById('s-pending').textContent = ov.pending.toLocaleString();
+  document.getElementById('s-classified').textContent = ov.classified.toLocaleString();
+
+  // Consensus pie
+  new Chart(document.getElementById('chart-consensus'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Agreed', 'Disagreed', 'Human Reviewed', 'Pending'],
+      datasets: [{ data: [ov.agreed, ov.disagreed, ov.human_reviewed, ov.pending],
+        backgroundColor: ['#4ade80', '#f87171', '#fbbf24', '#475569'] }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
+  });
+
+  // Category bar (load from gap data)
+  const gapData = await fetch('/dashboard/api/gap-analysis').then(r => r.json());
+  const catTotals = {};
+  for (const item of gapData.summary.by_class) {
+    const cat = item.description.split(' > ')[0];
+    catTotals[cat] = catTotals[cat] || { papers: 0, patents: 0 };
+    catTotals[cat].papers += item.papers;
+    catTotals[cat].patents += item.patents;
+  }
+  const cats = Object.keys(catTotals);
+  new Chart(document.getElementById('chart-categories'), {
+    type: 'bar',
+    data: {
+      labels: cats,
+      datasets: [
+        { label: 'Papers', data: cats.map(c => catTotals[c].papers), backgroundColor: '#60a5fa' },
+        { label: 'Patents', data: cats.map(c => catTotals[c].patents), backgroundColor: '#c084fc' },
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { labels: { color: '#94a3b8' } } } }
+  });
+}
+
+// ── Classified docs (Goal 1 & 2) ──
+async function loadClassified(section, docType, offset) {
+  if (offset === undefined) offset = 0;
+  if (offset < 0) offset = 0;
+  state[section].offset = offset;
+
+  const url = `/dashboard/api/classified?doc_type=${docType}&limit=${PAGE_SIZE}&offset=${offset}`;
+  const data = await fetch(url).then(r => r.json());
+  state[section].total = data.total;
+  state[section].loaded = true;
+
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  html += '<th>Serial</th><th>Year</th><th>Title</th><th>Primary</th><th>Secondary</th><th>Tertiary</th><th>Status</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const r of data.rows) {
+    const tag = r.status === 'agreed' ? 'tag-agreed' : 'tag-reviewed';
+    html += `<tr>
+      <td style="color:var(--dim);font-size:0.8rem">${esc(r.serial_number)}</td>
+      <td>${r.year || '—'}</td>
+      <td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.title)}">${esc(r.title)}</td>
+      <td>${codeBadge(r.final_primary)}</td>
+      <td>${codeBadge(r.final_secondary)}</td>
+      <td>${codeBadge(r.final_tertiary)}</td>
+      <td><span class="tag ${tag}">${r.status}</span></td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+
+  const loadFnName = section === 'papers' ? "loadPapers" : "loadPatents";
+  html += `<div class="pagination">${paginate(section + '-content', section, loadFnName)}</div>`;
+
+  document.getElementById(section + '-content').innerHTML = html;
+}
+
+function loadPapers(offset) { loadClassified('papers', 'paper', offset); }
+function loadPatents(offset) { loadClassified('patents', 'patent', offset); }
+
+// ── Gap Analysis (Goal 3a) ──
+async function loadGaps() {
+  const data = await fetch('/dashboard/api/gap-analysis').then(r => r.json());
+  state.gapsLoaded = true;
+
+  // Bar chart: papers vs patents per class
+  const classes = data.summary.by_class.filter(c => c.papers > 0 || c.patents > 0);
+  new Chart(document.getElementById('chart-gap'), {
+    type: 'bar',
+    data: {
+      labels: classes.map(c => c.code),
+      datasets: [
+        { label: 'Papers', data: classes.map(c => c.papers), backgroundColor: '#60a5fa' },
+        { label: 'Patents', data: classes.map(c => c.patents), backgroundColor: '#c084fc' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'x',
+      scales: { x: { ticks: { color: '#94a3b8' }, title: { display: true, text: 'Class Code', color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } },
+      plugins: { legend: { labels: { color: '#94a3b8' } } }
+    }
+  });
+
+  // 5-year period chart (show top 5 classes by total volume)
+  const periods = data.periods;
+  if (periods && periods.length > 0) {
+    const classTotals = {};
+    for (const p of periods) {
+      classTotals[p.code] = (classTotals[p.code] || 0) + p.papers + p.patents;
+    }
+    const topCodes = Object.entries(classTotals).sort((a,b) => b[1] - a[1]).slice(0, 6).map(e => +e[0]);
+    const uniquePeriods = [...new Set(periods.map(p => p.period))].sort();
+    const colors = ['#60a5fa', '#4ade80', '#f87171', '#fbbf24', '#c084fc', '#22d3ee'];
+
+    const datasets = topCodes.map((code, i) => ({
+      label: `${code}: ${desc(code)}`,
+      data: uniquePeriods.map(period => {
+        const match = periods.find(p => p.code === code && p.period === period);
+        return match ? match.papers + match.patents : 0;
+      }),
+      borderColor: colors[i], backgroundColor: colors[i] + '33', fill: false, tension: 0.3,
+    }));
+
+    new Chart(document.getElementById('chart-periods'), {
+      type: 'line',
+      data: { labels: uniquePeriods, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } },
+        plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 11 } } } }
+      }
+    });
+  }
+
+  // Gap table
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  html += '<th>Code</th><th>Description</th><th>Papers</th><th>Patents</th><th>Gap Type</th>';
+  html += '</tr></thead><tbody>';
+  for (const g of data.summary.by_class) {
+    const tagClass = 'tag-' + g.gap_type.replace('_', '-');
+    const gapLabel = g.gap_type.replace('_', ' ');
+    html += `<tr>
+      <td>${codeBadge(g.code)}</td>
+      <td>${esc(g.description)}</td>
+      <td style="text-align:right">${g.papers}</td>
+      <td style="text-align:right">${g.patents}</td>
+      <td><span class="tag ${tagClass}">${gapLabel}</span></td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('gap-table-wrap').innerHTML = html;
+}
+
+// ── Links (Goal 3b) ──
+async function loadLinks(offset) {
+  if (offset === undefined) offset = 0;
+  if (offset < 0) offset = 0;
+  state.links.offset = offset;
+
+  const data = await fetch(`/dashboard/api/links?limit=${PAGE_SIZE}&offset=${offset}`).then(r => r.json());
+  state.links.total = data.total;
+  state.links.loaded = true;
+
+  if (data.total === 0) {
+    document.getElementById('links-content').innerHTML = '<div class="empty-state">No patent-paper links found. Run analysis first.</div>';
+    return;
+  }
+
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  html += '<th>Patent</th><th>Patent Title</th><th>Year</th><th>Paper</th><th>Paper Title</th><th>Year</th><th>Similarity</th>';
+  html += '</tr></thead><tbody>';
+  for (const r of data.rows) {
+    const pct = (r.score * 100).toFixed(1);
+    const barW = Math.min(r.score * 100, 100);
+    html += `<tr>
+      <td style="color:var(--dim);font-size:0.8rem">${esc(r.patent_serial)}</td>
+      <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.patent_title)}">${esc(r.patent_title)}</td>
+      <td>${r.patent_year || '—'}</td>
+      <td style="color:var(--dim);font-size:0.8rem">${esc(r.paper_serial)}</td>
+      <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.paper_title)}">${esc(r.paper_title)}</td>
+      <td>${r.paper_year || '—'}</td>
+      <td><div style="display:flex;align-items:center;gap:6px"><div style="width:60px;height:6px;background:var(--border);border-radius:3px"><div style="width:${barW}%;height:100%;background:var(--blue);border-radius:3px"></div></div><span style="font-size:0.8rem">${pct}%</span></div></td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+  html += `<div class="pagination">${paginate('links-content', 'links', 'loadLinks')}</div>`;
+  document.getElementById('links-content').innerHTML = html;
+}
+
+// ── Crossrefs (Goal 4) ──
+async function loadCrossrefs() {
+  const data = await fetch('/dashboard/api/crossrefs').then(r => r.json());
+  state.crossrefsLoaded = true;
+
+  if (data.total === 0) {
+    document.getElementById('crossrefs-content').innerHTML = '<div class="card"><div class="empty-state"><p style="font-size:1.5rem;margin-bottom:0.5rem">No matches found</p><p style="color:var(--dim)">The patent inventor/applicant names and paper author names in the source CSV files do not share a common format, so exact name matching produced 0 results. This is a data quality limitation, not a code issue.</p></div></div>';
+    return;
+  }
+
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  html += '<th>Matched Name</th><th>Patent</th><th>Patent Title</th><th>Paper</th><th>Paper Title</th>';
+  html += '</tr></thead><tbody>';
+  for (const r of data.rows) {
+    html += `<tr>
+      <td style="font-weight:600">${esc(r.matched_name)}</td>
+      <td style="color:var(--dim);font-size:0.8rem">${esc(r.patent_serial)}</td>
+      <td>${esc(r.patent_title)}</td>
+      <td style="color:var(--dim);font-size:0.8rem">${esc(r.paper_serial)}</td>
+      <td>${esc(r.paper_title)}</td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('crossrefs-content').innerHTML = html;
+}
+
+// ── Results ──
+async function loadResults() {
+  const data = await fetch('/dashboard/api/results').then(r => r.json());
+  state.resultsLoaded = true;
+
+  const total = data.counts.total;
+  const finalized = data.agreed + data.human_reviewed;
+  const totalClassified = data.agreed + data.disagreed + data.human_reviewed;
+
+  let html = '';
+
+  // ── Section 1: Classification Results ──
+  html += `<div class="card">
+    <div class="card-title">Classification Results</div>
+    <div class="info-box" style="margin-bottom:0">
+      <h3>How did the classification go?</h3>
+      <p>We started with <strong>${total.toLocaleString()} documents</strong> &mdash; ${data.counts.papers.toLocaleString()} research papers and ${data.counts.patents.toLocaleString()} US patents, spanning from ${data.year_range ? data.year_range.min : '?'} to ${data.year_range ? data.year_range.max : '?'}.</p>
+      <p>Two AI assistants independently read the summary of each document and assigned it to one of 30 ferrofluid topics. Out of the ${totalClassified.toLocaleString()} documents they processed:</p>
+      <ul>
+        <li><strong>${data.agreed.toLocaleString()} (${data.agreement_rate}%)</strong> &mdash; Both AIs agreed on the main topic. These were accepted automatically.</li>
+        <li><strong>${data.disagreed.toLocaleString()}</strong> &mdash; The AIs disagreed and still need a human to decide.</li>
+        <li><strong>${data.human_reviewed.toLocaleString()}</strong> &mdash; A human has already reviewed the disagreement and made the final call.</li>
+      </ul>
+      <p>Right now, <strong>${finalized.toLocaleString()} documents have a final classification</strong> (the ones where both AIs agreed plus the ones a human has reviewed). The remaining ${data.disagreed.toLocaleString()} disagreements are waiting for human review.</p>
+    </div>
+  </div>`;
+
+  // ── Section 2: Most Popular Topics ──
+  html += `<div class="card">
+    <div class="card-title">Most Popular Topics</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="info-box" style="margin-bottom:0">
+        <h3>Top Paper Topics</h3>
+        <p>The most common topics among classified research papers:</p>
+        <ol style="margin-left:1.25rem;">`;
+  for (const c of data.top_paper_classes) {
+    html += `<li><strong>${c.cnt} papers</strong> &mdash; Topic ${c.code}: ${esc(desc(c.code))}</li>`;
+  }
+  html += `</ol></div>
+      <div class="info-box" style="margin-bottom:0">
+        <h3>Top Patent Topics</h3>
+        <p>The most common topics among classified patents:</p>
+        <ol style="margin-left:1.25rem;">`;
+  for (const c of data.top_patent_classes) {
+    html += `<li><strong>${c.cnt} patents</strong> &mdash; Topic ${c.code}: ${esc(desc(c.code))}</li>`;
+  }
+  html += `</ol></div></div></div>`;
+
+  // ── Section 3: Research Over Time ──
+  html += `<div class="card">
+    <div class="card-title">Research Over Time</div>
+    <div class="info-box" style="margin-bottom:0">
+      <h3>When were these documents published?</h3>
+      <p>Ferrofluid research spans several decades. Here's how papers and patents are distributed over time:</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;">
+      <div class="info-box" style="margin-bottom:0">
+        <h3>Papers by Decade</h3>`;
+  for (const d of data.papers_by_decade) {
+    html += `<p><strong>${d.decade}s:</strong> ${d.cnt.toLocaleString()} papers</p>`;
+  }
+  html += `</div><div class="info-box" style="margin-bottom:0">
+        <h3>Patents by Decade</h3>`;
+  for (const d of data.patents_by_decade) {
+    html += `<p><strong>${d.decade}s:</strong> ${d.cnt.toLocaleString()} patents</p>`;
+  }
+  html += `</div></div></div>`;
+
+  // ── Section 4: Disagreement Analysis ──
+  html += `<div class="card">
+    <div class="card-title">What Were the Disagreements About?</div>
+    <div class="info-box">
+      <h3>Why did the AIs disagree?</h3>
+      <p>When two AIs read the same document and pick different topics, it usually means the document touches on <strong>more than one subject</strong>. For example, a paper about "computer simulation of ferrofluid flow in a pipe" could be classified as either Computer Modeling or Application/Engineering &mdash; depending on whether you focus on the method or the use case.</p>
+      <p>The most common disagreements are between topics that are closely related or that overlap in subject matter. Below are the most frequent disagreement patterns:</p>
+    </div>
+    <div class="table-wrap" style="margin-bottom:1rem;">
+      <table>
+        <thead><tr><th>AI #1 Picked</th><th>AI #2 Picked</th><th>How Often</th><th>What This Means</th></tr></thead>
+        <tbody>`;
+  for (const p of data.disagreement_pairs) {
+    const d1 = desc(p.gpt_code);
+    const d2 = desc(p.claude_code);
+    const cat1 = majorCat(p.gpt_code);
+    const cat2 = majorCat(p.claude_code);
+    const sameCat = cat1 === cat2;
+    const explanation = sameCat
+      ? `Both topics are in the <strong>${esc(cat1)}</strong> category &mdash; these are closely related subjects, so it makes sense the AIs found it hard to choose between them.`
+      : `These topics are in different categories (<strong>${esc(cat1)}</strong> vs <strong>${esc(cat2)}</strong>), which means the document likely covers multiple distinct subjects.`;
+    html += `<tr>
+      <td>${codeBadge(p.gpt_code)}</td>
+      <td>${codeBadge(p.claude_code)}</td>
+      <td style="text-align:center"><strong>${p.cnt}</strong> times</td>
+      <td style="font-size:0.82rem;color:var(--muted)">${explanation}</td>
+    </tr>`;
+  }
+  html += `</tbody></table></div>`;
+
+  // Human review breakdown
+  if (data.human_reviewed > 0) {
+    const gptPct = Math.round(data.human_picked_gpt / data.human_reviewed * 100);
+    const claudePct = Math.round(data.human_picked_claude / data.human_reviewed * 100);
+    const otherPct = 100 - gptPct - claudePct;
+    html += `<div class="info-box" style="margin-bottom:0">
+      <h3>When a human reviewed the disagreements, who was right more often?</h3>
+      <p>Out of the <strong>${data.human_reviewed.toLocaleString()}</strong> disagreements that have been reviewed by a human:</p>
+      <ul>
+        <li><strong>${data.human_picked_gpt.toLocaleString()} times (${gptPct}%)</strong> &mdash; The human agreed with AI #1 (GPT).</li>
+        <li><strong>${data.human_picked_claude.toLocaleString()} times (${claudePct}%)</strong> &mdash; The human agreed with AI #2 (Claude).</li>
+        <li><strong>${data.human_picked_other.toLocaleString()} times (${otherPct}%)</strong> &mdash; The human picked a completely different topic that neither AI suggested.</li>
+      </ul>
+      <p>${gptPct > claudePct ? 'AI #1 (GPT) was right more often in disagreements.' : claudePct > gptPct ? 'AI #2 (Claude) was right more often in disagreements.' : 'Both AIs were right about equally often.'}</p>
+    </div>`;
+  }
+  html += `</div>`;
+
+  // ── Section 5: Gap Analysis Results ──
+  const gapCount = data.papers_only_classes.length;
+  const bothCount = data.both_classes.length;
+  const emptyCount = data.empty_classes.length;
+  html += `<div class="card">
+    <div class="card-title">Goal 3a: Gap Analysis &mdash; What Did We Find?</div>
+    <div class="info-box">
+      <h3>The big picture</h3>
+      <p>Out of 30 topics, here is how papers and patents are distributed:</p>
+      <ul>
+        <li><strong>${bothCount} topics</strong> have both papers AND patents &mdash; research and industry are both active in these areas.</li>
+        <li><strong style="color:var(--yellow)">${gapCount} topics</strong> have research papers but <strong>no patents at all</strong>. These are the opportunity gaps &mdash; areas where scientists are working but no one has tried to commercialize or patent the ideas yet.</li>
+        <li><strong>${emptyCount} topics</strong> have no papers or patents in our dataset.</li>
+      </ul>
+      <h3>Which topics have research but no patents?</h3>
+      <p>These ${gapCount} topics represent areas where academic research exists but no one has filed a patent. Each one could be an opportunity for a new invention or product:</p>
+      <ul>`;
+  for (const c of data.papers_only_classes) {
+    html += `<li><strong>Topic ${c.code}</strong> (${c.papers} papers) &mdash; ${esc(c.description)}</li>`;
+  }
+  html += `</ul></div></div>`;
+
+  // ── Section 6: Patent-Paper Links Results ──
+  html += `<div class="card">
+    <div class="card-title">Goal 3b: Patent-Paper Links &mdash; What Did We Find?</div>
+    <div class="info-box" style="margin-bottom:0">
+      <h3>Connecting patents to related research</h3>
+      <p>For each patent, the system found the 3 most related research papers by comparing their written summaries. In total:</p>
+      <ul>
+        <li><strong>${data.total_links.toLocaleString()} links</strong> were created between patents and papers.</li>
+        <li>The <strong>average similarity</strong> between linked patents and papers is <strong>${data.avg_similarity}%</strong>.</li>
+        <li>The <strong>strongest match</strong> found had a similarity of <strong>${data.max_similarity}%</strong>.</li>
+      </ul>
+      <p>These links help answer the question: "Which research papers are most closely related to this patent?" You can browse all the links in the <strong>Goal 3b: Paper-Patent Links</strong> tab.</p>
+    </div>
+  </div>`;
+
+  // ── Section 7: Assignee Cross-Reference Results ──
+  html += `<div class="card">
+    <div class="card-title">Goal 4: Assignee Cross-Reference &mdash; What Did We Find?</div>
+    <div class="info-box" style="margin-bottom:0">
+      <h3>Looking for people who both research and patent</h3>
+      <p>We looked for individuals who appear as both a patent inventor and a research paper author on the same ferrofluid topic.</p>
+      <p><strong>Result: ${data.total_crossrefs} matches found.</strong></p>
+      ${data.total_crossrefs === 0 ? `<p>The patent files and paper files store names in very different ways (for example, "Smith J" vs "John Smith"), so the system couldn't confidently match any names. This doesn't mean there are no people working in both areas &mdash; it just means the data isn't formatted consistently enough for automatic matching.</p><p>To find these people, the names would need to be cleaned up by hand or a more flexible name-matching approach would need to be used.</p>` : `<p>These individuals bridge the gap between academic research and patented inventions. Browse the full list in the <strong>Goal 4: Assignee Crossref</strong> tab.</p>`}
+    </div>
+  </div>`;
+
+  // ── Section 8: Knowledge Graph Summary ──
+  html += `<div class="card">
+    <div class="card-title">Knowledge Graph &mdash; The Big Picture</div>
+    <div class="info-box" style="margin-bottom:0">
+      <h3>What does the knowledge graph show?</h3>
+      <p>The knowledge graph is an interactive map of all 30 ferrofluid topics and how they connect. It shows:</p>
+      <ul>
+        <li><strong>Which topics are most popular</strong> (bigger boxes = more documents).</li>
+        <li><strong>Which topics are related</strong> (connected by lines when documents share both topics).</li>
+        <li><strong>Where the gaps are</strong> (red boxes = topics with research but no patents).</li>
+      </ul>
+      <p>You can explore it in the <strong>Knowledge Graph</strong> tab. Click and drag boxes to rearrange, scroll to zoom, and hover for details.</p>
+    </div>
+  </div>`;
+
+  // ── Section 9: What's Left To Do ──
+  if (data.disagreed > 0) {
+    html += `<div class="card" style="border-color:var(--yellow)">
+      <div class="card-title" style="color:var(--yellow)">What's Left To Do?</div>
+      <div class="info-box" style="margin-bottom:0">
+        <p>There are still <strong>${data.disagreed.toLocaleString()} documents</strong> where the two AIs disagreed and a human hasn't reviewed them yet. Until those are resolved, they won't appear in the papers/patents tables or be counted in the gap analysis.</p>
+        <p>Once all disagreements are reviewed, you can re-run the analysis to get updated results that include every document.</p>
+        <p style="margin-top:0.75rem"><a href="/review/ui" target="_blank" style="color:var(--yellow)">Open the Review Tool to resolve disagreements &rarr;</a></p>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('results-content').innerHTML = html;
+}
+
+// ── Init ──
+loadOverview();
+</script>
+</body>
+</html>

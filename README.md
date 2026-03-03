@@ -11,6 +11,10 @@ AI-assisted classification of ~4,000 ferrofluid research papers and ~600 US pate
 | **Goal 3** | **Gap analysis** — which classes have patents vs don't, by year. Link each patent to 3+ related papers |
 | **Goal 4** | **Assignee cross-reference** — patent holders who also authored papers on the same topic |
 
+## Separate Rationale Statement
+
+See [`Rationale.md`](./Rationale.md) for the project-level rationale (purpose, abstract-only classification basis, two-model + human review justification, linking rationale, and taxonomy usage).
+
 ## Taxonomy (30 Class Codes)
 
 | Code | Major Category | Description |
@@ -123,31 +127,41 @@ Sorted by: Year → Primary Class → Secondary Class → Tertiary Class
 ```
 paper-patent/
 ├── app/
-│   ├── config.py              # Settings (API keys, DB path)
-│   ├── db.py                  # SQLite database layer
+│   ├── config.py              # Settings (API keys, DB path, rate limits)
 │   ├── main.py                # FastAPI application
 │   ├── taxonomy.py            # 30 ferrofluid class codes
-│   ├── models/
+│   ├── db/                    # SQLite database layer (modular)
+│   │   ├── connection.py      # Connection + transaction context manager
+│   │   ├── documents.py       # Document CRUD
+│   │   ├── classifications.py # Classification + AI result CRUD
+│   │   └── links.py           # Patent-paper links + crossrefs
 │   ├── routes/
 │   │   ├── analysis.py        # Gap analysis + linking endpoints
 │   │   ├── classify.py        # Classification pipeline endpoint
 │   │   ├── documents.py       # Import + document CRUD
 │   │   ├── export.py          # CSV export endpoints
 │   │   ├── graph.py           # Knowledge graph endpoint
-│   │   └── review.py          # Human review endpoint
-│   └── services/
-│       ├── classifier.py      # GPT + Claude classifiers
-│       ├── consensus.py       # Agreement checker
-│       ├── export.py          # CSV export logic
-│       ├── gap_analysis.py    # Gap analysis logic
-│       ├── importer.py        # CSV data import
-│       ├── knowledge_graph.py # Graph visualization
-│       ├── linking.py         # Patent-paper linking + assignee crossref
-│       └── pipeline.py        # Classification orchestrator
+│   │   ├── progress.py        # Live progress dashboard API
+│   │   ├── review.py          # Human review API
+│   │   └── review_ui.py       # Review disagreements UI
+│   ├── services/
+│   │   ├── classifier.py      # GPT + Claude classifiers
+│   │   ├── consensus.py       # Agreement checker
+│   │   ├── export.py          # CSV export logic
+│   │   ├── gap_analysis.py    # Gap analysis logic
+│   │   ├── importer.py        # CSV data import
+│   │   ├── knowledge_graph.py # Graph visualization
+│   │   ├── linking.py         # Patent-paper linking + assignee crossref
+│   │   ├── pipeline.py        # Classification orchestrator
+│   │   └── rate_limiter.py    # Token-bucket rate limiter for API calls
+│   └── templates/             # HTML templates for dashboards
+│       ├── progress.html      # Live classification progress
+│       └── review_ui.html     # Disagreement review UI
 ├── data/                      # Raw CSV files
 ├── info/                      # Assignment docs + taxonomy definition
 ├── output/                    # Generated CSV exports
-└── tests/                     # 23 unit tests
+├── scripts/                   # Utility scripts
+└── tests/                     # 50 unit tests
 ```
 
 ## Running Tests

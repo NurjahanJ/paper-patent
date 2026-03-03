@@ -71,7 +71,7 @@ def get_classifications_by_status(status: str) -> list[dict]:
         return [dict(r) for r in rows]
 
 
-def get_all_classified() -> list[dict]:
+def get_finalized_classifications() -> list[dict]:
     with transaction() as conn:
         rows = conn.execute(
             """SELECT d.*, c.final_primary, c.final_secondary, c.final_tertiary,

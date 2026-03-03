@@ -134,6 +134,8 @@ def export_patent_paper_links(filepath: str = None) -> str:
         ).fetchall()
 
     df = pd.DataFrame([dict(r) for r in rows])
+    if df.empty:
+        logger.warning("No patent-paper links found. Run /analysis/link-patents first.")
     df.to_csv(filepath, index=False, encoding="utf-8-sig")
     logger.info("Exported %d patent-paper links to %s", len(df), filepath)
     return filepath
@@ -157,6 +159,8 @@ def export_assignee_crossrefs(filepath: str = None) -> str:
         ).fetchall()
 
     df = pd.DataFrame([dict(r) for r in rows])
+    if df.empty:
+        logger.warning("No assignee cross-refs found. Run /analysis/crossref-assignees first.")
     df.to_csv(filepath, index=False, encoding="utf-8-sig")
     logger.info("Exported %d assignee cross-refs to %s", len(df), filepath)
     return filepath
