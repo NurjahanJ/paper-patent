@@ -11,6 +11,10 @@ AI-assisted classification of ~4,000 ferrofluid research papers and ~600 US pate
 | **Goal 3** | **Gap analysis** — which classes have patents vs don't, by year. Link each patent to 3+ related papers |
 | **Goal 4** | **Assignee cross-reference** — patent holders who also authored papers on the same topic |
 
+## Separate Rationale Statement
+
+See [`Rationale.md`](./Rationale.md) for the project-level rationale (purpose, abstract-only classification basis, two-model + human review justification, linking rationale, and taxonomy usage).
+
 ## Taxonomy (30 Class Codes)
 
 | Code | Major Category | Description |
