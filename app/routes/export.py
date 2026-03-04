@@ -7,6 +7,7 @@ from app.services.export import (
     export_gap_analysis,
     export_patent_paper_links,
     export_assignee_crossrefs,
+    export_disagreements,
 )
 
 router = APIRouter(prefix="/export", tags=["export"])
@@ -47,6 +48,13 @@ async def export_crossrefs():
     return FileResponse(path, media_type="text/csv", filename="assignee_crossrefs.csv")
 
 
+@router.post("/disagreements")
+async def export_disagreements_csv():
+    """Export all disagreement documents as CSV."""
+    path = export_disagreements()
+    return FileResponse(path, media_type="text/csv", filename="disagreements.csv")
+
+
 @router.post("/all")
 async def export_all():
     """Export everything at once."""
@@ -55,8 +63,9 @@ async def export_all():
     gaps_path = export_gap_analysis()
     links_path = export_patent_paper_links()
     crossrefs_path = export_assignee_crossrefs()
+    disagreements_path = export_disagreements()
 
     return {
-        "files": [papers_path, patents_path, gaps_path, links_path, crossrefs_path],
+        "files": [papers_path, patents_path, gaps_path, links_path, crossrefs_path, disagreements_path],
         "message": "All exports generated in the output/ directory.",
     }

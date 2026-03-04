@@ -6,103 +6,412 @@
 <title>Ferrofluid Classifier — Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  
   :root {
-    --bg: #0f172a; --card: #1e293b; --border: #334155;
-    --text: #e2e8f0; --muted: #94a3b8; --dim: #64748b;
-    --green: #4ade80; --red: #f87171; --yellow: #fbbf24;
-    --blue: #60a5fa; --purple: #c084fc; --cyan: #22d3ee;
+    --bg: #fafbfc;
+    --bg-secondary: #ffffff;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --border-light: #f0f2f5;
+    --text: #1a1f36;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --text-light: #a0aec0;
+    --accent: #6366f1;
+    --accent-light: #818cf8;
+    --accent-dark: #4f46e5;
+    --green: #10b981;
+    --green-light: #d1fae5;
+    --red: #ef4444;
+    --red-light: #fee2e2;
+    --yellow: #f59e0b;
+    --yellow-light: #fef3c7;
+    --blue: #3b82f6;
+    --blue-light: #dbeafe;
+    --purple: #8b5cf6;
+    --purple-light: #ede9fe;
+    --cyan: #06b6d4;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
+  
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  
+  body { 
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+    background: var(--bg); 
+    color: var(--text); 
+    min-height: 100vh;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
   /* Navigation */
-  .nav { background: var(--card); border-bottom: 1px solid var(--border); padding: 0 2rem; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 2rem; }
-  .nav-brand { font-size: 1rem; font-weight: 600; color: var(--text); padding: 1rem 0; white-space: nowrap; }
-  .nav-links { display: flex; gap: 0; overflow-x: auto; }
-  .nav-links a { color: var(--muted); text-decoration: none; padding: 1rem 1.25rem; font-size: 0.85rem; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
-  .nav-links a:hover, .nav-links a.active { color: var(--text); border-bottom-color: var(--blue); }
+  .nav { 
+    background: var(--bg-secondary); 
+    border-bottom: 1px solid var(--border); 
+    padding: 0 2rem; 
+    position: sticky; 
+    top: 0; 
+    z-index: 100; 
+    display: flex; 
+    align-items: center; 
+    gap: 3rem;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .nav-brand { 
+    font-size: 1.125rem; 
+    font-weight: 700; 
+    color: var(--text); 
+    padding: 1.25rem 0; 
+    white-space: nowrap;
+    letter-spacing: -0.02em;
+  }
+  
+  .nav-links { display: flex; gap: 0.25rem; overflow-x: auto; }
+  
+  .nav-links a { 
+    color: var(--text-secondary); 
+    text-decoration: none; 
+    padding: 1.25rem 1rem; 
+    font-size: 0.875rem; 
+    font-weight: 500;
+    border-bottom: 2px solid transparent; 
+    transition: all 0.2s ease; 
+    white-space: nowrap;
+  }
+  
+  .nav-links a:hover { 
+    color: var(--accent); 
+    background: var(--border-light);
+  }
+  
+  .nav-links a.active { 
+    color: var(--accent); 
+    border-bottom-color: var(--accent);
+  }
 
   /* Layout */
-  .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 2.5rem 2rem; }
   .section { display: none; }
-  .section.active { display: block; }
-  .section-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; }
-  .section-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
+  .section.active { display: block; animation: fadeIn 0.3s ease; }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .section-title { 
+    font-size: 1.875rem; 
+    font-weight: 700; 
+    margin-bottom: 0.5rem; 
+    color: var(--text);
+    letter-spacing: -0.03em;
+  }
+  
+  .section-desc { 
+    font-size: 1rem; 
+    color: var(--text-secondary); 
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
 
   /* Cards */
-  .card { background: var(--card); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border); margin-bottom: 1rem; }
-  .card-title { font-size: 0.8rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+  .card { 
+    background: var(--card); 
+    border-radius: 16px; 
+    padding: 2rem; 
+    border: 1px solid var(--border); 
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s ease;
+  }
+  
+  .card:hover {
+    box-shadow: var(--shadow-md);
+  }
+  
+  .card-title { 
+    font-size: 0.875rem; 
+    color: var(--text-muted); 
+    text-transform: uppercase; 
+    letter-spacing: 0.08em; 
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
 
   /* Stat grid */
-  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-  .stat-card { background: var(--card); border-radius: 12px; padding: 1.25rem; border: 1px solid var(--border); text-align: center; }
-  .stat-value { font-size: 2rem; font-weight: 700; }
-  .stat-label { font-size: 0.75rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+  .stat-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+    gap: 1.25rem; 
+    margin-bottom: 2rem; 
+  }
+  
+  .stat-card { 
+    background: var(--card); 
+    border-radius: 16px; 
+    padding: 1.75rem; 
+    border: 1px solid var(--border); 
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  
+  .stat-value { 
+    font-size: 2.25rem; 
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  
+  .stat-label { 
+    font-size: 0.75rem; 
+    color: var(--text-muted); 
+    text-transform: uppercase; 
+    letter-spacing: 0.06em; 
+    margin-top: 0.5rem;
+    font-weight: 600;
+  }
 
   /* Tables */
-  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
-  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-  th { background: #0f172a; color: var(--muted); font-weight: 600; text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
-  td { padding: 8px 12px; border-bottom: 1px solid #1e293b; color: var(--text); }
-  tr:hover td { background: rgba(255,255,255,0.03); }
-  .code-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
-  .badge-material { background: #166534; color: #4ade80; }
-  .badge-computation { background: #1e3a5f; color: #60a5fa; }
-  .badge-experimentation { background: #713f12; color: #fbbf24; }
-  .badge-application { background: #831843; color: #f472b6; }
-  .badge-review { background: #4c1d95; color: #c084fc; }
+  .table-wrap { 
+    overflow-x: auto; 
+    border-radius: 12px; 
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+  
+  table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    font-size: 0.875rem;
+    background: var(--card);
+  }
+  
+  th { 
+    background: var(--bg); 
+    color: var(--text-secondary); 
+    font-weight: 600; 
+    text-align: left; 
+    padding: 1rem 1.25rem; 
+    border-bottom: 1px solid var(--border); 
+    position: sticky; 
+    top: 0; 
+    font-size: 0.75rem; 
+    text-transform: uppercase; 
+    letter-spacing: 0.06em;
+  }
+  
+  td { 
+    padding: 1rem 1.25rem; 
+    border-bottom: 1px solid var(--border-light); 
+    color: var(--text);
+  }
+  
+  tr:last-child td { border-bottom: none; }
+  
+  tr:hover td { background: var(--bg); }
+  
+  .code-badge { 
+    display: inline-block; 
+    padding: 4px 10px; 
+    border-radius: 6px; 
+    font-size: 0.8rem; 
+    font-weight: 600;
+  }
+  
+  .badge-material { background: var(--green-light); color: #047857; }
+  .badge-computation { background: var(--blue-light); color: #1e40af; }
+  .badge-experimentation { background: var(--yellow-light); color: #b45309; }
+  .badge-application { background: #fce7f3; color: #be185d; }
+  .badge-review { background: var(--purple-light); color: #6d28d9; }
 
   /* Pagination */
-  .pagination { display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem; justify-content: center; }
-  .pagination button { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-size: 0.85rem; }
-  .pagination button:hover { background: var(--border); }
-  .pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
-  .pagination span { font-size: 0.85rem; color: var(--muted); }
+  .pagination { 
+    display: flex; 
+    gap: 0.75rem; 
+    align-items: center; 
+    margin-top: 1.5rem; 
+    justify-content: center; 
+  }
+  
+  .pagination button { 
+    padding: 8px 16px; 
+    border-radius: 8px; 
+    border: 1px solid var(--border); 
+    background: var(--card); 
+    color: var(--text); 
+    cursor: pointer; 
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .pagination button:hover:not(:disabled) { 
+    background: var(--accent); 
+    color: white;
+    border-color: var(--accent);
+  }
+  
+  .pagination button:disabled { 
+    opacity: 0.4; 
+    cursor: not-allowed; 
+  }
+  
+  .pagination span { 
+    font-size: 0.875rem; 
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
 
   /* Gap chart area */
-  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .chart-row { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 1.5rem; 
+    margin-bottom: 1.5rem; 
+  }
+  
   .chart-container { position: relative; height: 400px; }
   .gap-table-scroll { max-height: 500px; overflow-y: auto; }
 
   /* Tags */
-  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 500; }
-  .tag-agreed { background: #166534; color: #4ade80; }
-  .tag-disagreed { background: #7f1d1d; color: #f87171; }
-  .tag-reviewed { background: #713f12; color: #fbbf24; }
-  .tag-both { background: #1e3a5f; color: #60a5fa; }
-  .tag-papers-only { background: #713f12; color: #fbbf24; }
-  .tag-patents-only { background: #4c1d95; color: #c084fc; }
-  .tag-empty { background: #1e1e1e; color: #64748b; }
+  .tag { 
+    display: inline-block; 
+    padding: 4px 12px; 
+    border-radius: 8px; 
+    font-size: 0.75rem; 
+    font-weight: 600;
+  }
+  
+  .tag-agreed { background: var(--green-light); color: #047857; }
+  .tag-disagreed { background: var(--red-light); color: #b91c1c; }
+  .tag-reviewed { background: var(--yellow-light); color: #b45309; }
+  .tag-both { background: var(--blue-light); color: #1e40af; }
+  .tag-papers-only { background: var(--yellow-light); color: #b45309; }
+  .tag-patents-only { background: var(--purple-light); color: #6d28d9; }
+  .tag-empty { background: var(--border-light); color: var(--text-muted); }
 
   /* Knowledge graph */
-  .graph-frame { width: 100%; height: 700px; border: 1px solid var(--border); border-radius: 8px; background: white; }
+  .graph-frame { 
+    width: 100%; 
+    height: 700px; 
+    border: 1px solid var(--border); 
+    border-radius: 12px; 
+    background: white;
+    box-shadow: var(--shadow-sm);
+  }
 
   /* Responsive */
   @media (max-width: 900px) {
     .chart-row { grid-template-columns: 1fr; }
-    .stat-grid { grid-template-columns: repeat(3, 1fr); }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .container { padding: 1.5rem 1rem; }
+    .nav { padding: 0 1rem; gap: 1.5rem; }
   }
 
   /* Search */
-  .search-bar { display: flex; gap: 0.75rem; margin-bottom: 1rem; align-items: center; }
-  .search-bar input, .search-bar select { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 0.85rem; }
+  .search-bar { 
+    display: flex; 
+    gap: 0.75rem; 
+    margin-bottom: 1.5rem; 
+    align-items: center; 
+  }
+  
+  .search-bar input, .search-bar select { 
+    background: var(--card); 
+    border: 1px solid var(--border); 
+    border-radius: 10px; 
+    padding: 10px 14px; 
+    color: var(--text); 
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+  
+  .search-bar input:focus, .search-bar select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+  
   .search-bar input { flex: 1; min-width: 200px; }
   .search-bar select { min-width: 120px; }
 
-  .empty-state { text-align: center; padding: 3rem; color: var(--dim); }
-  .loading { text-align: center; padding: 2rem; color: var(--muted); }
+  .empty-state { 
+    text-align: center; 
+    padding: 4rem 2rem; 
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+  
+  .loading { 
+    text-align: center; 
+    padding: 3rem; 
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
 
   /* Info boxes */
-  .info-box { background: #0f172a; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; line-height: 1.7; font-size: 0.88rem; color: var(--muted); }
-  .info-box h3 { color: var(--text); font-size: 0.95rem; margin-bottom: 0.5rem; font-weight: 600; }
-  .info-box p { margin-bottom: 0.6rem; }
+  .info-box { 
+    background: var(--bg); 
+    border: 1px solid var(--border); 
+    border-radius: 12px; 
+    padding: 1.75rem 2rem; 
+    margin-bottom: 2rem; 
+    line-height: 1.7; 
+    font-size: 0.9375rem; 
+    color: var(--text-secondary);
+  }
+  
+  .info-box h3 { 
+    color: var(--text); 
+    font-size: 1.125rem; 
+    margin-bottom: 0.75rem; 
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  
+  .info-box p { margin-bottom: 0.875rem; }
   .info-box p:last-child { margin-bottom: 0; }
-  .info-box strong { color: var(--text); }
-  .info-box ul { margin: 0.4rem 0 0.6rem 1.25rem; }
-  .info-box ul li { margin-bottom: 0.25rem; }
-  .info-box .legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; }
-  .info-box .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; }
-  .info-box .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .info-box strong { color: var(--text); font-weight: 600; }
+  .info-box ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .info-box ul li { margin-bottom: 0.5rem; }
+  .info-box ol { margin: 0.5rem 0 1rem 1.5rem; }
+  .info-box ol li { margin-bottom: 0.5rem; }
+  
+  .info-box .legend { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 1.5rem; 
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-light);
+  }
+  
+  .info-box .legend-item { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  
+  .info-box .legend-dot { 
+    width: 12px; 
+    height: 12px; 
+    border-radius: 4px; 
+    flex-shrink: 0; 
+  }
 </style>
 </head>
 <body>
@@ -111,6 +420,7 @@
   <div class="nav-brand">Ferrofluid Classifier</div>
   <div class="nav-links">
     <a href="#overview" class="active" onclick="showSection('overview')">Overview</a>
+    <a href="#review" onclick="showSection('review')">Review Disagreements</a>
     <a href="#results" onclick="showSection('results')">Results</a>
     <a href="#papers" onclick="showSection('papers')">Goal 1: Papers</a>
     <a href="#patents" onclick="showSection('patents')">Goal 2: Patents</a>
@@ -122,6 +432,21 @@
 </nav>
 
 <div class="container">
+
+  <!-- REVIEW DISAGREEMENTS -->
+  <div id="review" class="section">
+    <h2 class="section-title">Review Disagreements</h2>
+    <p class="section-desc">When our two AI assistants disagree on how to categorize a document, you need to decide which classification is correct.</p>
+    
+    <div class="info-box" style="background: var(--blue-light); border-color: var(--blue);">
+      <h3>How does this work?</h3>
+      <p><strong>Two AI assistants</strong> (GPT-4o and Claude Sonnet) independently read each document's abstract and assign it to topic categories. When they <strong>disagree on the main topic</strong>, we need a human to make the final decision.</p>
+      <p><strong>Your job:</strong> Read the document abstract below, look at what each AI chose, and decide which classification makes the most sense. You can pick one of the AI's choices, or create your own custom classification if neither is right.</p>
+    </div>
+
+    <div id="review-progress" style="margin-bottom: 2rem;"></div>
+    <div id="review-content"></div>
+  </div>
 
   <!-- OVERVIEW -->
   <div id="overview" class="section active">
@@ -169,12 +494,6 @@
         <div class="card-title">Documents by Major Category</div>
         <div class="chart-container"><canvas id="chart-categories"></canvas></div>
       </div>
-    </div>
-
-    <div class="card" style="text-align:center; padding:1rem;">
-      <a href="/review/ui" target="_blank" style="color:var(--yellow); text-decoration:none; font-size:0.9rem;">
-        Open Disagreement Review UI &rarr;
-      </a>
     </div>
   </div>
 
@@ -321,9 +640,12 @@
 let taxonomy = {};
 const PAGE_SIZE = 50;
 const state = {
-  papers: { offset: 0, total: 0, filter: '' },
+  resultsLoaded: false, gapsLoaded: false, graphLoaded: false,
+  reviewLoaded: false, reviewCurrent: null, reviewSkipOffset: 0,
+  links: { loaded: false, offset: 0, total: 0 },
+  crossrefsLoaded: false,
+  papers: { offset: 0, total: 0, filter: '', loaded: false },
   patents: { offset: 0, total: 0, filter: '' },
-  links: { offset: 0, total: 0 },
 };
 
 // ── Navigation ──
@@ -333,6 +655,7 @@ function showSection(id) {
   document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
   document.querySelector(`.nav-links a[href="#${id}"]`).classList.add('active');
 
+  if (id === 'review' && !state.reviewLoaded) loadReview();
   if (id === 'results' && !state.resultsLoaded) loadResults();
   if (id === 'papers' && !state.papers.loaded) loadClassified('papers', 'paper');
   if (id === 'patents' && !state.patents.loaded) loadClassified('patents', 'patent');
@@ -402,9 +725,9 @@ async function loadOverview() {
     data: {
       labels: ['Agreed', 'Disagreed', 'Human Reviewed', 'Pending'],
       datasets: [{ data: [ov.agreed, ov.disagreed, ov.human_reviewed, ov.pending],
-        backgroundColor: ['#4ade80', '#f87171', '#fbbf24', '#475569'] }]
+        backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#718096'] }]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#4a5568', font: { family: 'Inter' } } } } }
   });
 
   // Category bar (load from gap data)
@@ -422,11 +745,11 @@ async function loadOverview() {
     data: {
       labels: cats,
       datasets: [
-        { label: 'Papers', data: cats.map(c => catTotals[c].papers), backgroundColor: '#60a5fa' },
-        { label: 'Patents', data: cats.map(c => catTotals[c].patents), backgroundColor: '#c084fc' },
+        { label: 'Papers', data: cats.map(c => catTotals[c].papers), backgroundColor: '#3b82f6', borderRadius: 6 },
+        { label: 'Patents', data: cats.map(c => catTotals[c].patents), backgroundColor: '#8b5cf6', borderRadius: 6 },
       ]
     },
-    options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { labels: { color: '#94a3b8' } } } }
+    options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#4a5568', font: { family: 'Inter' } }, grid: { color: '#f0f2f5' } }, y: { ticks: { color: '#4a5568', font: { family: 'Inter' } }, grid: { color: '#f0f2f5' } } }, plugins: { legend: { labels: { color: '#4a5568', font: { family: 'Inter' } } } } }
   });
 }
 
@@ -480,14 +803,14 @@ async function loadGaps() {
     data: {
       labels: classes.map(c => c.code),
       datasets: [
-        { label: 'Papers', data: classes.map(c => c.papers), backgroundColor: '#60a5fa' },
-        { label: 'Patents', data: classes.map(c => c.patents), backgroundColor: '#c084fc' },
+        { label: 'Papers', data: classes.map(c => c.papers), backgroundColor: '#3b82f6', borderRadius: 6 },
+        { label: 'Patents', data: classes.map(c => c.patents), backgroundColor: '#8b5cf6', borderRadius: 6 },
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false, indexAxis: 'x',
-      scales: { x: { ticks: { color: '#94a3b8' }, title: { display: true, text: 'Class Code', color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } },
-      plugins: { legend: { labels: { color: '#94a3b8' } } }
+      scales: { x: { ticks: { color: '#4a5568', font: { family: 'Inter' } }, title: { display: true, text: 'Class Code', color: '#4a5568', font: { family: 'Inter' } }, grid: { color: '#f0f2f5' } }, y: { ticks: { color: '#4a5568', font: { family: 'Inter' } }, grid: { color: '#f0f2f5' } } },
+      plugins: { legend: { labels: { color: '#4a5568', font: { family: 'Inter' } } } }
     }
   });
 
@@ -516,8 +839,8 @@ async function loadGaps() {
       data: { labels: uniquePeriods, datasets },
       options: {
         responsive: true, maintainAspectRatio: false,
-        scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } },
-        plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 11 } } } }
+        scales: { x: { ticks: { color: '#4a5568', font: { family: 'Inter' } }, grid: { color: '#f0f2f5' } }, y: { ticks: { color: '#4a5568', font: { family: 'Inter' } }, grid: { color: '#f0f2f5' } } },
+        plugins: { legend: { position: 'bottom', labels: { color: '#4a5568', font: { size: 11, family: 'Inter' } } } }
       }
     });
   }
@@ -795,6 +1118,302 @@ async function loadResults() {
   }
 
   document.getElementById('results-content').innerHTML = html;
+}
+
+// ── Review Disagreements ──
+async function loadReview() {
+  state.reviewLoaded = true;
+  await updateReviewStats();
+  await loadNextReview();
+}
+
+async function updateReviewStats() {
+  const stats = await fetch('/review/ui/stats').then(r => r.json());
+  const total = stats.agreed + stats.disagreed + stats.human_reviewed;
+  const reviewed = stats.agreed + stats.human_reviewed;
+  const percent = total > 0 ? Math.round(100 * reviewed / total) : 0;
+  
+  let html = `
+    <div class="card" style="background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%); color: white; border: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+          <div style="font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem;">${stats.disagreed}</div>
+          <div style="font-size: 0.875rem; opacity: 0.9;">Documents need review</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 1.25rem; font-weight: 600;">${percent}%</div>
+          <div style="font-size: 0.75rem; opacity: 0.9;">Complete</div>
+        </div>
+      </div>
+      <div style="background: rgba(255,255,255,0.2); border-radius: 8px; height: 8px; overflow: hidden;">
+        <div style="background: white; height: 100%; width: ${percent}%; transition: width 0.5s ease;"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('review-progress').innerHTML = html;
+}
+
+async function loadNextReview() {
+  const data = await fetch('/review/ui/next?offset=' + state.reviewSkipOffset).then(r => r.json());
+  
+  if (data.done) {
+    document.getElementById('review-content').innerHTML = `
+      <div class="card" style="text-align: center; padding: 4rem 2rem; background: var(--green-light); border-color: var(--green);">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+        <h3 style="font-size: 1.5rem; color: var(--green); margin-bottom: 0.5rem;">All Done!</h3>
+        <p style="color: var(--text-secondary);">You've reviewed all disagreements. Great work!</p>
+      </div>
+    `;
+    return;
+  }
+  
+  state.reviewCurrent = data;
+  renderReviewDoc(data);
+}
+
+function renderReviewDoc(data) {
+  const doc = data.document;
+  const c = data.classification;
+  
+  const gptPrimary = c.gpt_primary;
+  const gptSecondary = c.gpt_secondary || gptPrimary;
+  const gptTertiary = c.gpt_tertiary || gptPrimary;
+  
+  const claudePrimary = c.claude_primary;
+  const claudeSecondary = c.claude_secondary || claudePrimary;
+  const claudeTertiary = c.claude_tertiary || claudePrimary;
+  
+  let html = `
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem;">
+        <div>
+          <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+            ${doc.serial_number} • ${doc.doc_type || 'Document'} • ${doc.year || '—'}
+          </div>
+          <h3 style="font-size: 1.25rem; font-weight: 600; color: var(--text); margin-bottom: 0.5rem;">
+            ${esc(doc.title)}
+          </h3>
+        </div>
+        <div style="text-align: right; color: var(--text-muted); font-size: 0.875rem;">
+          <strong>${data.remaining}</strong> remaining
+        </div>
+      </div>
+      
+      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.75rem; font-weight: 600;">Abstract</div>
+        <div style="font-size: 0.9375rem; line-height: 1.7; color: var(--text-secondary); max-height: 300px; overflow-y: auto;">
+          ${esc(doc.abstract)}
+        </div>
+      </div>
+      
+      <div style="margin-bottom: 1.5rem;">
+        <h4 style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 1rem; font-weight: 600;">
+          What did the AI assistants choose?
+        </h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          ${renderAIChoice('GPT-4o', gptPrimary, gptSecondary, gptTertiary, c.gpt_reasoning, '#3b82f6')}
+          ${renderAIChoice('Claude Sonnet', claudePrimary, claudeSecondary, claudeTertiary, c.claude_reasoning, '#8b5cf6')}
+        </div>
+      </div>
+      
+      <div style="background: var(--yellow-light); border: 1px solid var(--yellow); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem;">
+        <div style="font-size: 0.875rem; font-weight: 600; color: #b45309; margin-bottom: 0.5rem;">⚠️ Why do they disagree?</div>
+        <div style="font-size: 0.875rem; color: var(--text-secondary);">
+          The two AI assistants picked different <strong>primary topics</strong> for this document. 
+          GPT-4o chose <strong>${gptPrimary}: ${esc(desc(gptPrimary))}</strong>, 
+          while Claude chose <strong>${claudePrimary}: ${esc(desc(claudePrimary))}</strong>.
+        </div>
+      </div>
+      
+      <div>
+        <h4 style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 1rem; font-weight: 600;">
+          Your Decision
+        </h4>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
+          <button class="btn" style="flex: 1; min-width: 200px; padding: 1rem; background: var(--blue-light); border: 2px solid var(--blue); color: #1e40af; font-weight: 600;" 
+                  onclick="selectGPT()" id="btn-gpt">
+            ✓ Use GPT's Choice<br>
+            <span style="font-size: 0.8rem; font-weight: 400; opacity: 0.8;">${gptPrimary}: ${esc(desc(gptPrimary))}</span>
+          </button>
+          <button class="btn" style="flex: 1; min-width: 200px; padding: 1rem; background: var(--purple-light); border: 2px solid var(--purple); color: #6d28d9; font-weight: 600;" 
+                  onclick="selectClaude()" id="btn-claude">
+            ✓ Use Claude's Choice<br>
+            <span style="font-size: 0.8rem; font-weight: 400; opacity: 0.8;">${claudePrimary}: ${esc(desc(claudePrimary))}</span>
+          </button>
+          <button class="btn" style="min-width: 150px; padding: 1rem; background: var(--card); border: 2px solid var(--border); color: var(--text-secondary); font-weight: 600;" 
+                  onclick="toggleCustomCodes()">
+            Custom Classification
+          </button>
+        </div>
+        
+        <div id="custom-codes" style="display: none; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;">
+          <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            If neither AI choice is correct, select your own classification codes:
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            ${renderCodeSelect('custom-primary', 'Primary Topic')}
+            ${renderCodeSelect('custom-secondary', 'Secondary Topic')}
+            ${renderCodeSelect('custom-tertiary', 'Tertiary Topic')}
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">
+            Optional Note (explain your decision)
+          </label>
+          <textarea id="review-note" 
+                    style="width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; color: var(--text); font-size: 0.875rem; font-family: inherit; resize: vertical; min-height: 80px;"
+                    placeholder="e.g., 'Claude's choice is more accurate because the abstract focuses on...'"></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 0.75rem; justify-content: space-between;">
+          <button class="btn" style="padding: 0.75rem 1.5rem; background: transparent; border: 1px solid var(--border); color: var(--text-secondary);" 
+                  onclick="skipReview()">
+            Skip for Now
+          </button>
+          <button class="btn" style="padding: 0.75rem 2rem; background: var(--accent); border: 2px solid var(--accent); color: white; font-weight: 600;" 
+                  onclick="submitReview()" id="submit-btn" disabled>
+            Submit Decision
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('review-content').innerHTML = html;
+}
+
+function renderAIChoice(name, primary, secondary, tertiary, reasoning, color) {
+  return `
+    <div style="background: var(--card); border: 2px solid ${color}; border-radius: 12px; padding: 1.25rem;">
+      <div style="font-size: 0.875rem; font-weight: 600; color: ${color}; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        ${name}
+      </div>
+      <div style="margin-bottom: 0.75rem;">
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Primary</div>
+        <div style="font-size: 1rem; font-weight: 600; color: var(--text);">${primary}: ${esc(desc(primary))}</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+        <div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Secondary</div>
+          <div style="font-size: 0.875rem; color: var(--text-secondary);">${secondary}</div>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Tertiary</div>
+          <div style="font-size: 0.875rem; color: var(--text-secondary);">${tertiary}</div>
+        </div>
+      </div>
+      ${reasoning ? `<div style="font-size: 0.8125rem; color: var(--text-muted); font-style: italic; line-height: 1.5; padding-top: 0.75rem; border-top: 1px solid var(--border-light);">${esc(reasoning)}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderCodeSelect(id, label) {
+  let options = '';
+  const sortedTaxonomy = Object.entries(taxonomy).sort((a, b) => +a[0] - +b[0]);
+  for (const [code, info] of sortedTaxonomy) {
+    options += `<option value="${code}">${code}: ${esc(info.description)}</option>`;
+  }
+  return `
+    <div>
+      <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
+        ${label}
+      </label>
+      <select id="${id}" style="width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0.625rem; color: var(--text); font-size: 0.875rem;">
+        ${options}
+      </select>
+    </div>
+  `;
+}
+
+let reviewChoice = null;
+
+function selectGPT() {
+  const c = state.reviewCurrent.classification;
+  reviewChoice = {
+    primary: c.gpt_primary,
+    secondary: c.gpt_secondary || c.gpt_primary,
+    tertiary: c.gpt_tertiary || c.gpt_primary
+  };
+  document.getElementById('btn-gpt').style.background = 'var(--blue)';
+  document.getElementById('btn-gpt').style.color = 'white';
+  document.getElementById('btn-claude').style.background = 'var(--purple-light)';
+  document.getElementById('btn-claude').style.color = '#6d28d9';
+  document.getElementById('custom-codes').style.display = 'none';
+  document.getElementById('submit-btn').disabled = false;
+}
+
+function selectClaude() {
+  const c = state.reviewCurrent.classification;
+  reviewChoice = {
+    primary: c.claude_primary,
+    secondary: c.claude_secondary || c.claude_primary,
+    tertiary: c.claude_tertiary || c.claude_primary
+  };
+  document.getElementById('btn-claude').style.background = 'var(--purple)';
+  document.getElementById('btn-claude').style.color = 'white';
+  document.getElementById('btn-gpt').style.background = 'var(--blue-light)';
+  document.getElementById('btn-gpt').style.color = '#1e40af';
+  document.getElementById('custom-codes').style.display = 'none';
+  document.getElementById('submit-btn').disabled = false;
+}
+
+function toggleCustomCodes() {
+  const el = document.getElementById('custom-codes');
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    reviewChoice = 'custom';
+    document.getElementById('btn-gpt').style.background = 'var(--blue-light)';
+    document.getElementById('btn-gpt').style.color = '#1e40af';
+    document.getElementById('btn-claude').style.background = 'var(--purple-light)';
+    document.getElementById('btn-claude').style.color = '#6d28d9';
+    document.getElementById('submit-btn').disabled = false;
+  } else {
+    el.style.display = 'none';
+    reviewChoice = null;
+    document.getElementById('submit-btn').disabled = true;
+  }
+}
+
+function skipReview() {
+  state.reviewSkipOffset++;
+  loadNextReview();
+}
+
+async function submitReview() {
+  let finalChoice;
+  if (reviewChoice === 'custom') {
+    finalChoice = {
+      primary: +document.getElementById('custom-primary').value,
+      secondary: +document.getElementById('custom-secondary').value,
+      tertiary: +document.getElementById('custom-tertiary').value
+    };
+  } else {
+    finalChoice = reviewChoice;
+  }
+  
+  const note = document.getElementById('review-note').value || undefined;
+  const body = {
+    serial_number: state.reviewCurrent.document.serial_number,
+    ...finalChoice,
+    note
+  };
+  
+  const response = await fetch('/review/resolve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  
+  if (response.ok) {
+    state.reviewSkipOffset = 0;
+    reviewChoice = null;
+    await updateReviewStats();
+    await loadNextReview();
+  } else {
+    const error = await response.json();
+    alert('Error: ' + error.detail);
+  }
 }
 
 // ── Init ──

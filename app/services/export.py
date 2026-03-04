@@ -164,3 +164,59 @@ def export_assignee_crossrefs(filepath: str = None) -> str:
     df.to_csv(filepath, index=False, encoding="utf-8-sig")
     logger.info("Exported %d assignee cross-refs to %s", len(df), filepath)
     return filepath
+
+
+def export_disagreements(filepath: str = None) -> str:
+    """Export all disagreement documents as CSV for human review."""
+    _ensure_output_dir()
+    if filepath is None:
+        filepath = os.path.join(OUTPUT_DIR, "disagreements.csv")
+
+    with transaction() as conn:
+        rows = conn.execute(
+            """SELECT d.serial_number, d.doc_type, d.year, d.title, d.abstract,
+                      d.authors, d.source,
+                      gpt.primary_code AS gpt_primary,
+                      gpt.secondary_code AS gpt_secondary,
+                      gpt.tertiary_code AS gpt_tertiary,
+                      gpt.reasoning AS gpt_reasoning,
+                      claude.primary_code AS claude_primary,
+                      claude.secondary_code AS claude_secondary,
+                      claude.tertiary_code AS claude_tertiary,
+                      claude.reasoning AS claude_reasoning
+               FROM documents d
+               JOIN classifications c ON d.serial_number = c.serial_number
+               LEFT JOIN ai_results gpt ON d.serial_number = gpt.serial_number AND gpt.model_name = 'gpt'
+               LEFT JOIN ai_results claude ON d.serial_number = claude.serial_number AND claude.model_name = 'claude'
+               WHERE c.status = 'disagreed'
+               ORDER BY d.year, d.serial_number"""
+        ).fetchall()
+
+    records = []
+    for row in rows:
+        row = dict(row)
+        record = {
+            "Serial Number": row["serial_number"],
+            "Document Type": row["doc_type"],
+            "Year": row["year"],
+            "Title": row["title"],
+            "Abstract": row["abstract"],
+            "Authors": row["authors"],
+            "Source": row["source"],
+            "GPT Primary": row["gpt_primary"],
+            "GPT Primary Desc": get_class_description(row["gpt_primary"]) if row["gpt_primary"] else "",
+            "GPT Secondary": row["gpt_secondary"],
+            "GPT Tertiary": row["gpt_tertiary"],
+            "GPT Reasoning": row["gpt_reasoning"],
+            "Claude Primary": row["claude_primary"],
+            "Claude Primary Desc": get_class_description(row["claude_primary"]) if row["claude_primary"] else "",
+            "Claude Secondary": row["claude_secondary"],
+            "Claude Tertiary": row["claude_tertiary"],
+            "Claude Reasoning": row["claude_reasoning"],
+        }
+        records.append(record)
+
+    df = pd.DataFrame(records)
+    df.to_csv(filepath, index=False, encoding="utf-8-sig")
+    logger.info("Exported %d disagreement documents to %s", len(records), filepath)
+    return filepath
