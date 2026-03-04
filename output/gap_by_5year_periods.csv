@@ -1,0 +1,220 @@
+﻿period,code,description,papers,patents
+1965-1969,50,Review / Book > Review - Survey,1,0
+1970-1974,12,Material > Formulation,1,0
+1970-1974,13,Material > Properties,1,0
+1970-1974,28,Computation > Stability and other,3,0
+1970-1974,38,Application > Using principles of magnetic induction,1,0
+1970-1974,40,"Application > Medical (Hyperthermia, Cancer, Drug Delivery)",1,0
+1970-1974,46,Application > Heat transfer,0,1
+1970-1974,47,"Application > Bearing, Seal, Lubricant",2,1
+1970-1974,48,"Application > Levitation, Spin of droplets",1,0
+1970-1974,50,Review / Book > Review - Survey,3,0
+1975-1979,12,Material > Formulation,0,1
+1975-1979,13,Material > Properties,1,0
+1975-1979,14,Material > Evaluation / Characterization,13,0
+1975-1979,15,"Material > Manipulation, Droplets, other",0,1
+1975-1979,24,"Computation > Modelling (ODE, Boundary value, Two-phase, Lifting force, Magneto-optical, Dipole, Strain Energy, Susceptibility)",1,0
+1975-1979,25,Computation > Flow,1,0
+1975-1979,28,Computation > Stability and other,1,0
+1975-1979,42,Application > Biomedical,1,0
+1975-1979,46,Application > Heat transfer,0,1
+1975-1979,47,"Application > Bearing, Seal, Lubricant",14,1
+1975-1979,48,"Application > Levitation, Spin of droplets",0,1
+1975-1979,49,"Application > Digital Micro Fluids, Damping, Physics, Environmental, Engineering, Instruments to evaluate FF",0,1
+1975-1979,50,Review / Book > Review - Survey,5,0
+1975-1979,51,Review / Book > Book / Book chapter,1,0
+1980-1984,12,Material > Formulation,2,4
+1980-1984,13,Material > Properties,1,0
+1980-1984,14,Material > Evaluation / Characterization,14,0
+1980-1984,24,"Computation > Modelling (ODE, Boundary value, Two-phase, Lifting force, Magneto-optical, Dipole, Strain Energy, Susceptibility)",9,0
+1980-1984,25,Computation > Flow,2,0
+1980-1984,28,Computation > Stability and other,2,0
+1980-1984,42,Application > Biomedical,0,1
+1980-1984,46,Application > Heat transfer,2,0
+1980-1984,47,"Application > Bearing, Seal, Lubricant",9,7
+1980-1984,48,"Application > Levitation, Spin of droplets",1,0
+1980-1984,49,"Application > Digital Micro Fluids, Damping, Physics, Environmental, Engineering, Instruments to evaluate FF",4,1
+1980-1984,50,Review / Book > Review - Survey,12,0
+1985-1989,11,Material > Chemistry,2,0
+1985-1989,12,Material > Formulation,0,2
+1985-1989,13,Material > Properties,5,0
+1985-1989,14,Material > Evaluation / Characterization,21,0
+1985-1989,15,"Material > Manipulation, Droplets, other",2,0
+1985-1989,24,"Computation > Modelling (ODE, Boundary value, Two-phase, Lifting force, Magneto-optical, Dipole, Strain Energy, Susceptibility)",7,0
+1985-1989,28,Computation > Stability and other,5,0
+1985-1989,44,"Application > Geology, Oil-field recovery",0,1
+1985-1989,45,Application > Flow,1,0
+1985-1989,46,Application > Heat transfer,1,0
+1985-1989,47,"Application > Bearing, Seal, Lubricant",2,11
+1985-1989,50,Review / Book > Review - Survey,13,0
+1985-1989,51,Review / Book > Book / Book chapter,1,0
+1990-1994,12,Material > Formulation,1,3
+1990-1994,13,Material > Properties,2,0
+1990-1994,14,Material > Evaluation / Characterization,35,0
+1990-1994,24,"Computation > Modelling (ODE, Boundary value, Two-phase, Lifting force, Magneto-optical, Dipole, Strain Energy, Susceptibility)",21,0
+1990-1994,26,Computation > Heat,1,0
+1990-1994,28,Computation > Stability and other,11,0
+1990-1994,40,"Application > Medical (Hyperthermia, Cancer, Drug Delivery)",2,0
+1990-1994,42,Application > Biomedical,1,0
+1990-1994,44,"Application > Geology, Oil-field recovery",0,1
+1990-1994,45,Application > Flow,1,0
+1990-1994,46,Application > Heat transfer,1,0
+1990-1994,47,"Application > Bearing, Seal, Lubricant",6,6
+1990-1994,50,Review / Book > Review - Survey,9,0
+1995-1999,11,Material > Chemistry,0,1
+1995-1999,12,Material > Formulation,7,6
+1995-1999,13,Material > Properties,1,0
+1995-1999,14,Material > Evaluation / Characterization,60,0
+1995-1999,15,"Material > Manipulation, Droplets, other",1,0
+1995-1999,24,"Computation > Modelling (ODE, Boundary value, Two-phase, Lifting force, Magneto-optical, Dipole, Strain Energy, Susceptibility)",31,0
+1995-1999,25,Computation > Flow,3,0
+1995-1999,26,Computation > Heat,1,0
+1995-1999,28,Computation > Stability and other,14,0
+1995-1999,37,Experimentation > Other than evaluation indicated in class 14,1,0
+1995-1999,38,Application > Using principles of magnetic induction,1,2
+1995-1999,40,"Application > Medical (Hyperthermia, Cancer, Drug Delivery)",5,0
+1995-1999,42,Application > Biomedical,6,3
+1995-1999,46,Application > Heat transfer,2,0
+1995-1999,47,"Application > Bearing, Seal, Lubricant",6,6
+1995-1999,48,"Application > Levitation, Spin of droplets",1,0
+1995-1999,49,"Application > Digital Micro Fluids, Damping, Physics, Environmental, Engineering, Instruments to evaluate FF",6,3
+1995-1999,50,Review / Book > Review - Survey,19,0
+2000-2004,11,Material > Chemistry,3,2
+2000-2004,12,Material > Formulation,11,1
+2000-2004,13,Material > Properties,3,0
+2000-2004,14,Material > Evaluation / Characterization,118,0
+2000-2004,15,"Material > Manipulation, Droplets, other",1,3
+2000-2004,21,Computation > FEA,1,0
+2000-2004,22,Computation > CFD,1,0
+2000-2004,24,"Computation > Modelling (ODE, Boundary value, Two-phase, Lifting force, Magneto-optical, Dipole, Strain Energy, Susceptibility)",75,0
+2000-2004,25,Computation > Flow,2,0
+2000-2004,26,Computation > Heat,1,0
+2000-2004,28,Computation > Stability and other,18,0
+2000-2004,29,"Computation > Magnetic Droplets, Spin of droplet",1,0
+2000-2004,38,Application > Using principles of magnetic induction,3,4
+2000-2004,40,"Application > Medical (Hyperthermia, Cancer, Drug Delivery)",14,1
+2000-2004,42,Application > Biomedical,5,1
+2000-2004,43,Application > Robotics - general,1,0
+2000-2004,46,Application > Heat transfer,4,0
+2000-2004,47,"Application > Bearing, Seal, Lubricant",8,7
+2000-2004,49,"Application > Digital Micro Fluids, Damping, Physics, Environmental, Engineering, Instruments to evaluate FF",3,4
+2000-2004,50,Review / Book > Review - Survey,31,0
+2005-2009,11,Material > Chemistry,11,1
+2005-2009,12,Material > Formulation,19,2
+2005-2009,13,Material > Properties,8,0
+2005-2009,14,Material > Evaluation / Characterization,146,0
+2005-2009,15,"Material > Manipulation, Droplets, other",2,1
+2005-2009,22,Computation > CFD,2,0
+2005-2009,24,"Computation > Modelling (ODE, Boundary value, Two-phase, Lifting force, Magneto-optical, Dipole, Strain Energy, Susceptibility)",77,0
+2005-2009,25,Computation > Flow,4,0
+2005-2009,26,Computation > Heat,2,0
+2005-2009,28,Computation > Stability and other,23,0
+2005-2009,37,Experimentation > Other than evaluation indicated in class 14,1,0
+2005-2009,38,Application > Using principles of magnetic induction,2,4
+2005-2009,39,Application > Medical Robotic Surgery,1,0
+2005-2009,40,"Application > Medical (Hyperthermia, Cancer, Drug Delivery)",29,3
+2005-2009,42,Application > Biomedical,8,4
+2005-2009,45,Application > Flow,6,1
+2005-2009,46,Application > Heat transfer,4,6
+2005-2009,47,"Application > Bearing, Seal, Lubricant",9,7
+2005-2009,48,"Application > Levitation, Spin of droplets",2,0
+2005-2009,49,"Application > Digital Micro Fluids, Damping, Physics, Environmental, Engineering, Instruments to evaluate FF",7,14
+2005-2009,50,Review / Book > Review - Survey,20,0
+2005-2009,51,Review / Book > Book / Book chapter,4,0
+2010-2014,11,Material > Chemistry,5,0
+2010-2014,12,Material > Formulation,20,9
+2010-2014,13,Material > Properties,10,1
+2010-2014,14,Material > Evaluation / Characterization,86,1
+2010-2014,15,"Material > Manipulation, Droplets, other",10,7
+2010-2014,22,Computation > CFD,3,0
+2010-2014,24,"Computation > Modelling (ODE, Boundary value, Two-phase, Lifting force, Magneto-optical, Dipole, Strain Energy, Susceptibility)",53,0
+2010-2014,25,Computation > Flow,7,0
+2010-2014,26,Computation > Heat,3,0
+2010-2014,27,Computation > Modelling,1,0
+2010-2014,28,Computation > Stability and other,19,0
+2010-2014,38,Application > Using principles of magnetic induction,5,19
+2010-2014,39,Application > Medical Robotic Surgery,0,4
+2010-2014,40,"Application > Medical (Hyperthermia, Cancer, Drug Delivery)",34,4
+2010-2014,41,Application > Medical (Pharmaceutical),0,1
+2010-2014,42,Application > Biomedical,11,14
+2010-2014,43,Application > Robotics - general,1,0
+2010-2014,44,"Application > Geology, Oil-field recovery",6,4
+2010-2014,45,Application > Flow,4,1
+2010-2014,46,Application > Heat transfer,17,6
+2010-2014,47,"Application > Bearing, Seal, Lubricant",22,18
+2010-2014,48,"Application > Levitation, Spin of droplets",2,0
+2010-2014,49,"Application > Digital Micro Fluids, Damping, Physics, Environmental, Engineering, Instruments to evaluate FF",14,28
+2010-2014,50,Review / Book > Review - Survey,34,0
+2010-2014,51,Review / Book > Book / Book chapter,13,0
+2015-2019,11,Material > Chemistry,3,0
+2015-2019,12,Material > Formulation,16,7
+2015-2019,13,Material > Properties,7,0
+2015-2019,14,Material > Evaluation / Characterization,94,0
+2015-2019,15,"Material > Manipulation, Droplets, other",10,10
+2015-2019,16,Material > Handling of,1,0
+2015-2019,22,Computation > CFD,3,0
+2015-2019,24,"Computation > Modelling (ODE, Boundary value, Two-phase, Lifting force, Magneto-optical, Dipole, Strain Energy, Susceptibility)",65,0
+2015-2019,25,Computation > Flow,9,0
+2015-2019,26,Computation > Heat,5,0
+2015-2019,28,Computation > Stability and other,14,0
+2015-2019,38,Application > Using principles of magnetic induction,11,17
+2015-2019,39,Application > Medical Robotic Surgery,0,2
+2015-2019,40,"Application > Medical (Hyperthermia, Cancer, Drug Delivery)",37,0
+2015-2019,42,Application > Biomedical,20,6
+2015-2019,43,Application > Robotics - general,1,1
+2015-2019,44,"Application > Geology, Oil-field recovery",5,13
+2015-2019,45,Application > Flow,0,1
+2015-2019,46,Application > Heat transfer,55,7
+2015-2019,47,"Application > Bearing, Seal, Lubricant",26,7
+2015-2019,48,"Application > Levitation, Spin of droplets",3,1
+2015-2019,49,"Application > Digital Micro Fluids, Damping, Physics, Environmental, Engineering, Instruments to evaluate FF",9,32
+2015-2019,50,Review / Book > Review - Survey,34,0
+2015-2019,51,Review / Book > Book / Book chapter,10,0
+2020-2024,11,Material > Chemistry,0,1
+2020-2024,12,Material > Formulation,12,4
+2020-2024,13,Material > Properties,8,0
+2020-2024,14,Material > Evaluation / Characterization,94,0
+2020-2024,15,"Material > Manipulation, Droplets, other",15,4
+2020-2024,21,Computation > FEA,2,0
+2020-2024,22,Computation > CFD,7,0
+2020-2024,23,Computation > MATLAB,1,0
+2020-2024,24,"Computation > Modelling (ODE, Boundary value, Two-phase, Lifting force, Magneto-optical, Dipole, Strain Energy, Susceptibility)",83,0
+2020-2024,25,Computation > Flow,13,0
+2020-2024,26,Computation > Heat,3,0
+2020-2024,28,Computation > Stability and other,15,0
+2020-2024,29,"Computation > Magnetic Droplets, Spin of droplet",2,0
+2020-2024,38,Application > Using principles of magnetic induction,3,18
+2020-2024,39,Application > Medical Robotic Surgery,0,1
+2020-2024,40,"Application > Medical (Hyperthermia, Cancer, Drug Delivery)",45,2
+2020-2024,41,Application > Medical (Pharmaceutical),2,2
+2020-2024,42,Application > Biomedical,11,14
+2020-2024,43,Application > Robotics - general,2,2
+2020-2024,44,"Application > Geology, Oil-field recovery",6,2
+2020-2024,45,Application > Flow,8,0
+2020-2024,46,Application > Heat transfer,73,9
+2020-2024,47,"Application > Bearing, Seal, Lubricant",27,7
+2020-2024,48,"Application > Levitation, Spin of droplets",2,2
+2020-2024,49,"Application > Digital Micro Fluids, Damping, Physics, Environmental, Engineering, Instruments to evaluate FF",10,22
+2020-2024,50,Review / Book > Review - Survey,53,1
+2020-2024,51,Review / Book > Book / Book chapter,13,0
+2025-2029,12,Material > Formulation,1,0
+2025-2029,14,Material > Evaluation / Characterization,2,1
+2025-2029,15,"Material > Manipulation, Droplets, other",3,1
+2025-2029,21,Computation > FEA,1,0
+2025-2029,22,Computation > CFD,3,0
+2025-2029,24,"Computation > Modelling (ODE, Boundary value, Two-phase, Lifting force, Magneto-optical, Dipole, Strain Energy, Susceptibility)",12,0
+2025-2029,25,Computation > Flow,1,0
+2025-2029,26,Computation > Heat,1,0
+2025-2029,28,Computation > Stability and other,3,0
+2025-2029,38,Application > Using principles of magnetic induction,0,1
+2025-2029,39,Application > Medical Robotic Surgery,1,0
+2025-2029,40,"Application > Medical (Hyperthermia, Cancer, Drug Delivery)",2,0
+2025-2029,42,Application > Biomedical,0,2
+2025-2029,43,Application > Robotics - general,1,0
+2025-2029,44,"Application > Geology, Oil-field recovery",1,1
+2025-2029,45,Application > Flow,1,0
+2025-2029,46,Application > Heat transfer,10,0
+2025-2029,47,"Application > Bearing, Seal, Lubricant",4,0
+2025-2029,49,"Application > Digital Micro Fluids, Damping, Physics, Environmental, Engineering, Instruments to evaluate FF",1,2
+2025-2029,50,Review / Book > Review - Survey,3,0
+2025-2029,51,Review / Book > Book / Book chapter,1,0

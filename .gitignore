@@ -8,6 +8,5 @@ dist/
 build/
 *.db
 .pytest_cache/
-output/
 *.html
 !app/templates/*.html

@@ -1,0 +1,31 @@
+﻿code,description,papers,patents,gap_type
+11,Material > Chemistry,24,5,both
+12,Material > Formulation,90,39,both
+13,Material > Properties,47,1,both
+14,Material > Evaluation / Characterization,683,2,both
+15,"Material > Manipulation, Droplets, other",44,27,both
+16,Material > Handling of,1,0,papers_only
+21,Computation > FEA,4,0,papers_only
+22,Computation > CFD,19,0,papers_only
+23,Computation > MATLAB,1,0,papers_only
+24,"Computation > Modelling (ODE, Boundary value, Two-phase, Lifting force, Magneto-optical, Dipole, Strain Energy, Susceptibility)",434,0,papers_only
+25,Computation > Flow,42,0,papers_only
+26,Computation > Heat,17,0,papers_only
+27,Computation > Modelling,1,0,papers_only
+28,Computation > Stability and other,128,0,papers_only
+29,"Computation > Magnetic Droplets, Spin of droplet",3,0,papers_only
+37,Experimentation > Other than evaluation indicated in class 14,2,0,papers_only
+38,Application > Using principles of magnetic induction,26,65,both
+39,Application > Medical Robotic Surgery,2,7,both
+40,"Application > Medical (Hyperthermia, Cancer, Drug Delivery)",169,10,both
+41,Application > Medical (Pharmaceutical),2,3,both
+42,Application > Biomedical,63,45,both
+43,Application > Robotics - general,6,3,both
+44,"Application > Geology, Oil-field recovery",18,22,both
+45,Application > Flow,21,3,both
+46,Application > Heat transfer,169,30,both
+47,"Application > Bearing, Seal, Lubricant",135,78,both
+48,"Application > Levitation, Spin of droplets",12,4,both
+49,"Application > Digital Micro Fluids, Damping, Physics, Environmental, Engineering, Instruments to evaluate FF",54,107,both
+50,Review / Book > Review - Survey,237,1,both
+51,Review / Book > Book / Book chapter,43,0,papers_only
