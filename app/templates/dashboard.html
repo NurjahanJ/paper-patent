@@ -420,8 +420,9 @@
   <div class="nav-brand">Ferrofluid Classifier</div>
   <div class="nav-links">
     <a href="#overview" class="active" onclick="showSection('overview')">Overview</a>
-    <a href="#review" onclick="showSection('review')">Review Disagreements</a>
     <a href="#results" onclick="showSection('results')">Results</a>
+    <a href="#review" onclick="showSection('review')">Review Disagreements</a>
+    <a href="#humanreviewed" onclick="showSection('humanreviewed')">Human Reviewed</a>
     <a href="#papers" onclick="showSection('papers')">Goal 1: Papers</a>
     <a href="#patents" onclick="showSection('patents')">Goal 2: Patents</a>
     <a href="#gaps" onclick="showSection('gaps')">Goal 3a: Gap Analysis</a>
@@ -446,6 +447,14 @@
 
     <div id="review-progress" style="margin-bottom: 2rem;"></div>
     <div id="review-content"></div>
+  </div>
+
+  <!-- HUMAN REVIEWED -->
+  <div id="humanreviewed" class="section">
+    <h2 class="section-title">Human Reviewed</h2>
+    <p class="section-desc">Documents that have been reviewed by a human, with AI model accuracy tracking.</p>
+    <div id="hr-tracker"></div>
+    <div id="hr-table"><div class="loading">Loading...</div></div>
   </div>
 
   <!-- OVERVIEW -->
@@ -641,7 +650,7 @@ let taxonomy = {};
 const PAGE_SIZE = 50;
 const state = {
   resultsLoaded: false, gapsLoaded: false, graphLoaded: false,
-  reviewLoaded: false, reviewCurrent: null, reviewSkipOffset: 0,
+  reviewLoaded: false, reviewCurrent: null, reviewSkipOffset: 0, hrLoaded: false,
   links: { loaded: false, offset: 0, total: 0 },
   crossrefsLoaded: false,
   papers: { offset: 0, total: 0, filter: '', loaded: false },
@@ -656,6 +665,7 @@ function showSection(id) {
   document.querySelector(`.nav-links a[href="#${id}"]`).classList.add('active');
 
   if (id === 'review' && !state.reviewLoaded) loadReview();
+  if (id === 'humanreviewed' && !state.hrLoaded) loadHumanReviewed();
   if (id === 'results' && !state.resultsLoaded) loadResults();
   if (id === 'papers' && !state.papers.loaded) loadClassified('papers', 'paper');
   if (id === 'patents' && !state.patents.loaded) loadClassified('patents', 'patent');
@@ -1121,12 +1131,6 @@ async function updateReviewStats() {
   const reviewed = stats.agreed + stats.human_reviewed;
   const percent = total > 0 ? Math.round(100 * reviewed / total) : 0;
   
-  const acc = stats.accuracy;
-  const gptWins = acc.gpt_correct;
-  const claudeWins = acc.claude_correct;
-  const neitherWins = acc.neither_correct;
-  const totalReviewed = acc.total_reviewed;
-  
   let html = `
     <div class="card" style="background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%); color: white; border: none;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -1142,33 +1146,6 @@ async function updateReviewStats() {
       <div style="background: rgba(255,255,255,0.2); border-radius: 8px; height: 8px; overflow: hidden;">
         <div style="background: white; height: 100%; width: ${percent}%; transition: width 0.5s ease;"></div>
       </div>
-    </div>
-    
-    <div class="card">
-      <div class="card-title">AI Model Accuracy Tracker</div>
-      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">${totalReviewed > 0 ? `Based on ${totalReviewed} human-reviewed disagreement${totalReviewed === 1 ? '' : 's'}` : 'No disagreements reviewed yet — start reviewing to see which AI is more accurate'}</p>
-      
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-        <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--accent);">
-          <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">GPT-4o</div>
-          <div style="font-size: 1.75rem; font-weight: 700; color: var(--accent); margin-bottom: 0.25rem;">${totalReviewed > 0 ? acc.gpt_accuracy + '%' : '—'}</div>
-          <div style="font-size: 0.875rem; color: var(--text-secondary);">${gptWins} correct</div>
-        </div>
-        
-        <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--purple);">
-          <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Claude Sonnet</div>
-          <div style="font-size: 1.75rem; font-weight: 700; color: var(--purple); margin-bottom: 0.25rem;">${totalReviewed > 0 ? acc.claude_accuracy + '%' : '—'}</div>
-          <div style="font-size: 0.875rem; color: var(--text-secondary);">${claudeWins} correct</div>
-        </div>
-      </div>
-      
-      ${neitherWins > 0 ? `
-      <div style="background: var(--bg-secondary); padding: 0.75rem 1rem; border-radius: 8px; text-align: center;">
-        <span style="color: var(--text-secondary); font-size: 0.875rem;">
-          ${neitherWins} case${neitherWins === 1 ? '' : 's'} where human chose a different classification than both AIs
-        </span>
-      </div>
-      ` : ''}
     </div>
   `;
   document.getElementById('review-progress').innerHTML = html;
@@ -1429,12 +1406,78 @@ async function submitReview() {
   if (response.ok) {
     state.reviewSkipOffset = 0;
     reviewChoice = null;
+    state.hrLoaded = false;
     await updateReviewStats();
     await loadNextReview();
   } else {
     const error = await response.json();
     alert('Error: ' + error.detail);
   }
+}
+
+// ── Human Reviewed ──
+async function loadHumanReviewed() {
+  state.hrLoaded = true;
+  const [statsRes, docsRes] = await Promise.all([
+    fetch('/review/ui/stats').then(r => r.json()),
+    fetch('/review/ui/reviewed').then(r => r.json())
+  ]);
+  const acc = statsRes.accuracy;
+  const totalReviewed = acc.total_reviewed;
+  const gptWins = acc.gpt_correct;
+  const claudeWins = acc.claude_correct;
+  const neitherWins = acc.neither_correct;
+
+  let tracker = `
+    <div class="card">
+      <div class="card-title">AI Model Accuracy Tracker</div>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">${totalReviewed > 0 ? `Based on ${totalReviewed} human-reviewed disagreement${totalReviewed === 1 ? '' : 's'}` : 'No disagreements reviewed yet \u2014 start reviewing to see which AI is more accurate'}</p>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+        <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--accent);">
+          <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">GPT-4o</div>
+          <div style="font-size: 1.75rem; font-weight: 700; color: var(--accent); margin-bottom: 0.25rem;">${totalReviewed > 0 ? acc.gpt_accuracy + '%' : '\u2014'}</div>
+          <div style="font-size: 0.875rem; color: var(--text-secondary);">${gptWins} correct</div>
+        </div>
+        <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--purple);">
+          <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Claude Sonnet</div>
+          <div style="font-size: 1.75rem; font-weight: 700; color: var(--purple); margin-bottom: 0.25rem;">${totalReviewed > 0 ? acc.claude_accuracy + '%' : '\u2014'}</div>
+          <div style="font-size: 0.875rem; color: var(--text-secondary);">${claudeWins} correct</div>
+        </div>
+      </div>
+      ${neitherWins > 0 ? `<div style="background: var(--bg-secondary); padding: 0.75rem 1rem; border-radius: 8px; text-align: center;"><span style="color: var(--text-secondary); font-size: 0.875rem;">${neitherWins} case${neitherWins === 1 ? '' : 's'} where human chose a different classification than both AIs</span></div>` : ''}
+    </div>`;
+  document.getElementById('hr-tracker').innerHTML = tracker;
+
+  if (docsRes.count === 0) {
+    document.getElementById('hr-table').innerHTML = '<div class="empty-state">No documents have been human-reviewed yet.</div>';
+    return;
+  }
+
+  let rows = '';
+  for (const d of docsRes.items) {
+    const winner = d.correct_model === 'gpt-4o' ? '<span style="color:var(--accent);font-weight:600;">GPT-4o</span>'
+                 : d.correct_model === 'claude-sonnet' ? '<span style="color:var(--purple);font-weight:600;">Claude Sonnet</span>'
+                 : '<span style="color:var(--text-muted);">Neither</span>';
+    rows += `<tr>
+      <td>${esc(d.serial_number)}</td>
+      <td>${esc(d.title)}</td>
+      <td>${d.year || '\u2014'}</td>
+      <td>${d.gpt_primary || '\u2014'}</td>
+      <td>${d.claude_primary || '\u2014'}</td>
+      <td><strong>${d.final_primary}</strong>: ${esc(desc(d.final_primary))}</td>
+      <td>${winner}</td>
+    </tr>`;
+  }
+
+  document.getElementById('hr-table').innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Serial #</th><th>Title</th><th>Year</th><th>GPT Choice</th><th>Claude Choice</th><th>Final Decision</th><th>Correct AI</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
 }
 
 // ── Init ──

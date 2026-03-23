@@ -60,6 +60,20 @@ async def next_disagreement(offset: int = 0):
     return {"done": False, "document": doc, "classification": classification, "remaining": len(remaining)}
 
 
-# Standalone review UI removed - review functionality is now integrated into the main dashboard
-# at /dashboard (see "Review Disagreements" tab)
-# The API endpoints above (/review/ui/taxonomy, /review/ui/stats, /review/ui/next) are still used by the dashboard
+@router.get("/review/ui/reviewed")
+async def list_human_reviewed():
+    """Return all human-reviewed documents with which AI was correct."""
+    with transaction() as conn:
+        rows = conn.execute(
+            """SELECT c.serial_number, c.final_primary, c.correct_model, c.final_reasoning,
+                      d.doc_type, d.title, d.year,
+                      gpt.primary_code AS gpt_primary,
+                      claude.primary_code AS claude_primary
+               FROM classifications c
+               JOIN documents d ON c.serial_number = d.serial_number
+               LEFT JOIN ai_results gpt ON c.serial_number = gpt.serial_number AND gpt.model_name = 'gpt'
+               LEFT JOIN ai_results claude ON c.serial_number = claude.serial_number AND claude.model_name = 'claude'
+               WHERE c.status = 'human_reviewed'
+               ORDER BY c.serial_number"""
+        ).fetchall()
+    return {"count": len(rows), "items": [dict(r) for r in rows]}
