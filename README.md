@@ -37,6 +37,26 @@ OPENAI_API_KEY=your-key
 ANTHROPIC_API_KEY=your-key
 ```
 
+## Dashboard
+
+### Quick Start: View the Dashboard
+
+```bash
+# Start the server
+uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+# Open in browser
+# Navigate to: http://127.0.0.1:8000/dashboard
+```
+
+The dashboard provides:
+- **Overview** — Classification statistics and progress
+- **Results & Findings** — Summary of all analyses
+- **Classified Papers/Patents** — Browse and filter classified documents
+- **Gap Analysis** — Visualize research gaps by class and time period
+- **Review Disagreements** — Resolve AI classification conflicts with improved UI
+- **Knowledge Graph** — Interactive visualization of paper-patent relationships
+
 ## Workflow
 
 ### Step 1: Import Data
