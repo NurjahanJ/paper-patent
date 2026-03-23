@@ -1105,18 +1105,6 @@ async function loadResults() {
     </div>
   </div>`;
 
-  // ── Section 9: What's Left To Do ──
-  if (data.disagreed > 0) {
-    html += `<div class="card" style="border-color:var(--yellow)">
-      <div class="card-title" style="color:var(--yellow)">What's Left To Do?</div>
-      <div class="info-box" style="margin-bottom:0">
-        <p>There are still <strong>${data.disagreed.toLocaleString()} documents</strong> where the two AIs disagreed and a human hasn't reviewed them yet. Until those are resolved, they won't appear in the papers/patents tables or be counted in the gap analysis.</p>
-        <p>Once all disagreements are reviewed, you can re-run the analysis to get updated results that include every document.</p>
-        <p style="margin-top:0.75rem"><a href="/review/ui" target="_blank" style="color:var(--yellow)">Open the Review Tool to resolve disagreements &rarr;</a></p>
-      </div>
-    </div>`;
-  }
-
   document.getElementById('results-content').innerHTML = html;
 }
 

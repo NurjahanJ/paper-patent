@@ -1,15 +1,10 @@
-from pathlib import Path
-
 from fastapi import APIRouter
-from fastapi.responses import HTMLResponse
 
 from app import db
 from app.db.connection import transaction
 from app.taxonomy import TAXONOMY
 
 router = APIRouter(tags=["review-ui"])
-
-_TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates"
 
 
 @router.get("/review/ui/taxonomy")
@@ -46,6 +41,6 @@ async def next_disagreement(offset: int = 0):
     return {"done": False, "document": doc, "classification": classification, "remaining": len(remaining)}
 
 
-@router.get("/review/ui", response_class=HTMLResponse)
-async def review_dashboard():
-    return HTMLResponse((_TEMPLATE_DIR / "review_ui.html").read_text(encoding="utf-8"))
+# Standalone review UI removed - review functionality is now integrated into the main dashboard
+# at /dashboard (see "Review Disagreements" tab)
+# The API endpoints above (/review/ui/taxonomy, /review/ui/stats, /review/ui/next) are still used by the dashboard
