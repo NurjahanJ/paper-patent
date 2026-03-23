@@ -31,14 +31,15 @@ def save_ai_result(serial_number: str, model_name: str,
 
 
 def finalize_classification(serial_number: str, primary: int, secondary: int,
-                            tertiary: int, reasoning: str, status: str, conn=None):
+                            tertiary: int, reasoning: str, status: str, 
+                            correct_model: Optional[str] = None, conn=None):
     def _execute(c):
         c.execute(
             """UPDATE classifications
                SET final_primary=?, final_secondary=?, final_tertiary=?,
-                   final_reasoning=?, status=?
+                   final_reasoning=?, status=?, correct_model=?
                WHERE serial_number=?""",
-            (primary, secondary, tertiary, reasoning, status, serial_number),
+            (primary, secondary, tertiary, reasoning, status, correct_model, serial_number),
         )
 
     if conn is not None:

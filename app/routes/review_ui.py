@@ -16,12 +16,31 @@ async def taxonomy_json():
 
 @router.get("/review/ui/stats")
 async def review_stats():
-    """Return review progress stats."""
+    """Return review progress stats and AI accuracy tracking."""
     with transaction() as conn:
         agreed = conn.execute("SELECT COUNT(1) FROM classifications WHERE status='agreed'").fetchone()[0]
         disagreed = conn.execute("SELECT COUNT(1) FROM classifications WHERE status='disagreed'").fetchone()[0]
         reviewed = conn.execute("SELECT COUNT(1) FROM classifications WHERE status='human_reviewed'").fetchone()[0]
-    return {"agreed": agreed, "disagreed": disagreed, "human_reviewed": reviewed}
+        
+        # AI accuracy tracking
+        gpt_correct = conn.execute("SELECT COUNT(1) FROM classifications WHERE correct_model='gpt-4o'").fetchone()[0]
+        claude_correct = conn.execute("SELECT COUNT(1) FROM classifications WHERE correct_model='claude-sonnet'").fetchone()[0]
+        neither_correct = conn.execute("SELECT COUNT(1) FROM classifications WHERE status='human_reviewed' AND correct_model IS NULL").fetchone()[0]
+        
+    total_reviewed = gpt_correct + claude_correct + neither_correct
+    return {
+        "agreed": agreed, 
+        "disagreed": disagreed, 
+        "human_reviewed": reviewed,
+        "accuracy": {
+            "gpt_correct": gpt_correct,
+            "claude_correct": claude_correct,
+            "neither_correct": neither_correct,
+            "total_reviewed": total_reviewed,
+            "gpt_accuracy": round(gpt_correct / total_reviewed * 100, 1) if total_reviewed > 0 else 0,
+            "claude_accuracy": round(claude_correct / total_reviewed * 100, 1) if total_reviewed > 0 else 0
+        }
+    }
 
 
 @router.get("/review/ui/next")

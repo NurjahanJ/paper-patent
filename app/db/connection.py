@@ -50,6 +50,7 @@ def init_db():
                 final_tertiary INTEGER,
                 final_reasoning TEXT,
                 status TEXT NOT NULL DEFAULT 'pending',
+                correct_model TEXT,
                 FOREIGN KEY (serial_number) REFERENCES documents(serial_number)
             );
 
