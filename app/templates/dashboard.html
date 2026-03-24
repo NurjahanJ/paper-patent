@@ -55,43 +55,61 @@
     background: var(--bg-secondary); 
     border-bottom: 1px solid var(--border); 
     padding: 0 2rem; 
-    position: sticky; 
-    top: 0; 
-    z-index: 100; 
-    display: flex; 
-    align-items: center; 
-    gap: 3rem;
+    position: relative; 
+    z-index: 100;
     box-shadow: var(--shadow-sm);
+  }
+  
+  .nav-header {
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+    padding: 0.75rem 0 0.25rem 0;
   }
   
   .nav-brand { 
     font-size: 1.125rem; 
     font-weight: 700; 
     color: var(--text); 
-    padding: 1.25rem 0; 
     white-space: nowrap;
     letter-spacing: -0.02em;
   }
   
+  .nav-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .nav-row {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+  }
+  
+  .nav-row:first-child {
+    padding-bottom: 0.25rem;
+  }
+  
   .nav-links { display: flex; gap: 0.25rem; overflow-x: auto; }
   
-  .nav-links a { 
+  .nav-row a { 
     color: var(--text-secondary); 
     text-decoration: none; 
-    padding: 1.25rem 1rem; 
-    font-size: 0.875rem; 
+    padding: 0.625rem 1.25rem; 
+    font-size: 0.9375rem; 
     font-weight: 500;
     border-bottom: 2px solid transparent; 
     transition: all 0.2s ease; 
     white-space: nowrap;
   }
   
-  .nav-links a:hover { 
+  .nav-row a:hover { 
     color: var(--accent); 
     background: var(--border-light);
   }
   
-  .nav-links a.active { 
+  .nav-row a.active { 
     color: var(--accent); 
     border-bottom-color: var(--accent);
   }
@@ -417,18 +435,24 @@
 <body>
 
 <nav class="nav">
-  <div class="nav-brand">Ferrofluid Classifier</div>
-  <div class="nav-links">
-    <a href="#overview" class="active" onclick="showSection('overview')">Overview</a>
-    <a href="#results" onclick="showSection('results')">Results</a>
-    <a href="#review" onclick="showSection('review')">Review Disagreements</a>
-    <a href="#humanreviewed" onclick="showSection('humanreviewed')">Human Reviewed</a>
-    <a href="#papers" onclick="showSection('papers')">Goal 1: Papers</a>
-    <a href="#patents" onclick="showSection('patents')">Goal 2: Patents</a>
-    <a href="#gaps" onclick="showSection('gaps')">Goal 3a: Gap Analysis</a>
-    <a href="#links" onclick="showSection('links')">Goal 3b: Paper-Patent Links</a>
-    <a href="#crossrefs" onclick="showSection('crossrefs')">Goal 4: Assignee Crossref</a>
-    <a href="#graph" onclick="showSection('graph')">Knowledge Graph</a>
+  <div class="nav-header">
+    <div class="nav-brand">Ferrofluid Classifier</div>
+  </div>
+  <div class="nav-rows">
+    <div class="nav-row">
+      <a href="javascript:void(0)" data-tab="overview" class="active" onclick="showSection('overview')">Overview</a>
+      <a href="javascript:void(0)" data-tab="results" onclick="showSection('results')">Results</a>
+      <a href="javascript:void(0)" data-tab="review" onclick="showSection('review')">Review Disagreements</a>
+      <a href="javascript:void(0)" data-tab="humanreviewed" onclick="showSection('humanreviewed')">Human Reviewed</a>
+      <a href="javascript:void(0)" data-tab="graph" onclick="showSection('graph')">Knowledge Graph</a>
+    </div>
+    <div class="nav-row">
+      <a href="javascript:void(0)" data-tab="papers" onclick="showSection('papers')">Goal 1: Papers</a>
+      <a href="javascript:void(0)" data-tab="patents" onclick="showSection('patents')">Goal 2: Patents</a>
+      <a href="javascript:void(0)" data-tab="gaps" onclick="showSection('gaps')">Goal 3a: Gap Analysis</a>
+      <a href="javascript:void(0)" data-tab="links" onclick="showSection('links')">Goal 3b: Paper-Patent Links</a>
+      <a href="javascript:void(0)" data-tab="crossrefs" onclick="showSection('crossrefs')">Goal 4: Assignee Crossref</a>
+    </div>
   </div>
 </nav>
 
@@ -661,8 +685,8 @@ const state = {
 function showSection(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
-  document.querySelector(`.nav-links a[href="#${id}"]`).classList.add('active');
+  document.querySelectorAll('.nav-row a').forEach(a => a.classList.remove('active'));
+  document.querySelector(`.nav-row a[data-tab="${id}"]`).classList.add('active');
 
   if (id === 'review' && !state.reviewLoaded) loadReview();
   if (id === 'humanreviewed' && !state.hrLoaded) loadHumanReviewed();
