@@ -67,6 +67,17 @@ async def resolve_disagreement(request: ReviewRequest):
             detail=f"Cannot review: status is '{existing['status']}', expected 'disagreed' or 'pending'"
         )
 
+    # Determine which AI model was correct based on human's primary code choice
+    correct_model = None
+    if existing["status"] == "disagreed":
+        gpt_primary = existing.get("gpt_primary")
+        claude_primary = existing.get("claude_primary")
+        if request.primary == gpt_primary:
+            correct_model = "gpt-4o"
+        elif request.primary == claude_primary:
+            correct_model = "claude-sonnet"
+        # If neither matches, correct_model stays None (human chose different classification)
+
     note = request.note or "Human reviewed"
     db.finalize_classification(
         request.serial_number,
@@ -75,6 +86,7 @@ async def resolve_disagreement(request: ReviewRequest):
         request.tertiary,
         note,
         "human_reviewed",
+        correct_model,
     )
 
-    return {"status": "resolved", "serial_number": request.serial_number}
+    return {"status": "resolved", "serial_number": request.serial_number, "correct_model": correct_model}
