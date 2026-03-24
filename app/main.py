@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from app import db
 from app.routes import documents, classify, review, analysis, export, graph, progress, review_ui, dashboard
@@ -40,10 +41,4 @@ app.include_router(dashboard.router)
 
 @app.get("/")
 async def root():
-    counts = db.count_documents()
-    return {
-        "name": "Ferrofluid Paper-Patent Classifier",
-        "version": "2.0.0",
-        "status": "running",
-        "counts": counts,
-    }
+    return RedirectResponse(url="/dashboard")
