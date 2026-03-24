@@ -184,6 +184,45 @@ paper-patent/
 └── tests/                     # 50 unit tests
 ```
 
+## Deployment to Render.com
+
+### Prerequisites
+1. Push your code to GitHub
+2. Create a Render.com account and connect it to GitHub
+
+### Deploy Steps
+
+1. **Push to GitHub:**
+   ```bash
+   git push origin deploy-render
+   ```
+
+2. **On Render.com Dashboard:**
+   - Click "New +" → "Web Service"
+   - Connect your GitHub repository
+   - Render will auto-detect `render.yaml` and configure everything
+
+3. **Set Environment Variables:**
+   - In Render dashboard, go to your service → Environment
+   - Add:
+     - `OPENAI_API_KEY` = your OpenAI API key
+     - `ANTHROPIC_API_KEY` = your Anthropic API key
+
+4. **Deploy:**
+   - Render will automatically build and deploy
+   - Your dashboard will be live at: `https://your-app-name.onrender.com/dashboard`
+
+### Important Notes
+- **Free tier limitations:**
+  - Service spins down after 15 minutes of inactivity
+  - First request after sleep takes ~30 seconds (cold start)
+  - 750 hours/month free (enough for most use cases)
+- **Database:** SQLite persists on the 1GB disk volume
+- **Auto-deploy:** Pushes to your branch trigger automatic redeployment
+
+### Local Development
+The app works the same locally. See [Dashboard](#dashboard) section above.
+
 ## Running Tests
 
 ```bash
