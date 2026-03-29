@@ -674,7 +674,7 @@ let taxonomy = {};
 const PAGE_SIZE = 50;
 const state = {
   resultsLoaded: false, gapsLoaded: false, graphLoaded: false,
-  reviewLoaded: false, reviewCurrent: null, reviewSkipOffset: 0, hrLoaded: false,
+  reviewCurrent: null, reviewSkipOffset: 0, hrLoaded: false,
   links: { loaded: false, offset: 0, total: 0 },
   crossrefsLoaded: false,
   papers: { offset: 0, total: 0, filter: '', loaded: false },
@@ -688,7 +688,7 @@ function showSection(id) {
   document.querySelectorAll('.nav-row a').forEach(a => a.classList.remove('active'));
   document.querySelector(`.nav-row a[data-tab="${id}"]`).classList.add('active');
 
-  if (id === 'review' && !state.reviewLoaded) loadReview();
+  if (id === 'review') { state.reviewSkipOffset = 0; loadReview(); }
   if (id === 'humanreviewed' && !state.hrLoaded) loadHumanReviewed();
   if (id === 'results' && !state.resultsLoaded) loadResults();
   if (id === 'papers' && !state.papers.loaded) loadClassified('papers', 'paper');
@@ -1144,7 +1144,6 @@ async function loadResults() {
 
 // ── Review Disagreements ──
 async function loadReview() {
-  state.reviewLoaded = true;
   await updateReviewStats();
   await loadNextReview();
 }
@@ -1428,7 +1427,6 @@ async function submitReview() {
   });
   
   if (response.ok) {
-    state.reviewSkipOffset = 0;
     reviewChoice = null;
     state.hrLoaded = false;
     await updateReviewStats();
