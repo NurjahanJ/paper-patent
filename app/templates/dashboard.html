@@ -1402,38 +1402,67 @@ function skipReview() {
 }
 
 async function submitReview() {
-  let finalChoice;
-  if (reviewChoice === 'custom') {
-    finalChoice = {
-      primary: +document.getElementById('custom-primary').value,
-      secondary: +document.getElementById('custom-secondary').value,
-      tertiary: +document.getElementById('custom-tertiary').value
+  const btn = document.getElementById('submit-btn');
+  const originalText = btn.innerHTML;
+  
+  // Disable button and show loading state
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+  btn.innerHTML = '⏳ Submitting...';
+  
+  try {
+    let finalChoice;
+    if (reviewChoice === 'custom') {
+      finalChoice = {
+        primary: +document.getElementById('custom-primary').value,
+        secondary: +document.getElementById('custom-secondary').value,
+        tertiary: +document.getElementById('custom-tertiary').value
+      };
+    } else {
+      finalChoice = reviewChoice;
+    }
+    
+    const note = document.getElementById('review-note').value || undefined;
+    const body = {
+      serial_number: state.reviewCurrent.document.serial_number,
+      ...finalChoice,
+      note
     };
-  } else {
-    finalChoice = reviewChoice;
-  }
-  
-  const note = document.getElementById('review-note').value || undefined;
-  const body = {
-    serial_number: state.reviewCurrent.document.serial_number,
-    ...finalChoice,
-    note
-  };
-  
-  const response = await fetch('/review/resolve', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  
-  if (response.ok) {
-    reviewChoice = null;
-    state.hrLoaded = false;
-    await updateReviewStats();
-    await loadNextReview();
-  } else {
-    const error = await response.json();
-    alert('Error: ' + error.detail);
+    
+    const response = await fetch('/review/resolve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    
+    if (response.ok) {
+      // Show success state briefly
+      btn.innerHTML = '✓ Saved!';
+      btn.style.background = 'var(--green)';
+      btn.style.borderColor = 'var(--green)';
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      reviewChoice = null;
+      state.hrLoaded = false;
+      await updateReviewStats();
+      await loadNextReview();
+    } else {
+      const error = await response.json();
+      alert('Error: ' + error.detail);
+      
+      // Reset button on error
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.innerHTML = originalText;
+    }
+  } catch (err) {
+    alert('Network error: ' + err.message);
+    
+    // Reset button on error
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.innerHTML = originalText;
   }
 }
 
