@@ -53,8 +53,8 @@ def get_classification(serial_number: str) -> Optional[dict]:
     with transaction() as conn:
         row = conn.execute(
             """SELECT c.*, 
-                      gpt.primary_code AS gpt_primary, gpt.reasoning AS gpt_reasoning,
-                      claude.primary_code AS claude_primary, claude.reasoning AS claude_reasoning
+                      gpt.primary_code AS gpt_primary, gpt.secondary_code AS gpt_secondary, gpt.tertiary_code AS gpt_tertiary, gpt.reasoning AS gpt_reasoning,
+                      claude.primary_code AS claude_primary, claude.secondary_code AS claude_secondary, claude.tertiary_code AS claude_tertiary, claude.reasoning AS claude_reasoning
                FROM classifications c
                LEFT JOIN ai_results gpt ON c.serial_number = gpt.serial_number AND gpt.model_name = 'gpt'
                LEFT JOIN ai_results claude ON c.serial_number = claude.serial_number AND claude.model_name = 'claude'
