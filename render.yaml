@@ -11,7 +11,9 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: DB_PATH
+        value: /data/ferrofluids.db
     disk:
       name: ferrofluid-data
-      mountPath: /opt/render/project/src
+      mountPath: /data
       sizeGB: 1
