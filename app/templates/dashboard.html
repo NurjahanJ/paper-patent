@@ -688,6 +688,7 @@ function showSection(id) {
   document.querySelectorAll('.nav-row a').forEach(a => a.classList.remove('active'));
   document.querySelector(`.nav-row a[data-tab="${id}"]`).classList.add('active');
 
+  if (id === 'overview') loadOverview();
   if (id === 'review') { state.reviewSkipOffset = 0; loadReview(); }
   if (id === 'humanreviewed' && !state.hrLoaded) loadHumanReviewed();
   if (id === 'results' && !state.resultsLoaded) loadResults();
@@ -737,6 +738,8 @@ function paginate(containerId, stateKey, loadFn) {
 }
 
 // ── Overview ──
+let chartConsensus = null;
+let chartCategories = null;
 async function loadOverview() {
   const [ov, tx] = await Promise.all([
     fetch('/dashboard/api/overview').then(r => r.json()),
@@ -754,7 +757,8 @@ async function loadOverview() {
   document.getElementById('s-classified').textContent = ov.classified.toLocaleString();
 
   // Consensus pie
-  new Chart(document.getElementById('chart-consensus'), {
+  if (chartConsensus) chartConsensus.destroy();
+  chartConsensus = new Chart(document.getElementById('chart-consensus'), {
     type: 'doughnut',
     data: {
       labels: ['Agreed', 'Disagreed', 'Human Reviewed', 'Pending'],
@@ -764,7 +768,8 @@ async function loadOverview() {
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#4a5568', font: { family: 'Inter' } } } } }
   });
 
-  // Category bar (load from gap data)
+  // Category bar (load from gap data — only fetch once)
+  if (chartCategories) return;
   const gapData = await fetch('/dashboard/api/gap-analysis').then(r => r.json());
   const catTotals = {};
   for (const item of gapData.summary.by_class) {
@@ -774,7 +779,7 @@ async function loadOverview() {
     catTotals[cat].patents += item.patents;
   }
   const cats = Object.keys(catTotals);
-  new Chart(document.getElementById('chart-categories'), {
+  chartCategories = new Chart(document.getElementById('chart-categories'), {
     type: 'bar',
     data: {
       labels: cats,
