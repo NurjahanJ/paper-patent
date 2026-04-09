@@ -1,10 +1,12 @@
 """Dashboard route: serves the main project dashboard and its data APIs."""
+import shutil
 from pathlib import Path
 
-from fastapi import APIRouter
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi.responses import HTMLResponse, FileResponse
 
 from app import db
+from app.config import settings
 from app.db.connection import transaction
 from app.taxonomy import TAXONOMY
 from app.services.gap_analysis import gap_summary, gap_by_five_year_periods
@@ -221,6 +223,50 @@ async def dashboard_taxonomy():
     """Taxonomy lookup for the frontend."""
     return {str(k): {"code": v.code, "category": v.major_category, "description": v.description}
             for k, v in TAXONOMY.items()}
+
+
+@router.get("/dashboard/api/download-db")
+async def download_database():
+    """Download the current database file for backup or local sync."""
+    db_path = Path(settings.db_path)
+    if not db_path.exists():
+        raise HTTPException(status_code=404, detail="Database file not found")
+    return FileResponse(
+        path=str(db_path),
+        filename="ferrofluids.db",
+        media_type="application/octet-stream",
+    )
+
+
+@router.post("/dashboard/api/upload-db")
+async def upload_database(file: UploadFile = File(...)):
+    """Upload a database file to replace the current one.
+    
+    Use this to restore a backup or sync your local database to Render.
+    The uploaded file must be named ferrofluids.db.
+    """
+    db_path = Path(settings.db_path)
+    backup_path = db_path.with_suffix(".db.bak")
+    
+    # Create a backup of the current database
+    if db_path.exists():
+        shutil.copy2(db_path, backup_path)
+    
+    try:
+        # Write the uploaded file
+        with open(db_path, "wb") as f:
+            content = await file.read()
+            f.write(content)
+        return {
+            "status": "success",
+            "message": f"Database uploaded ({len(content):,} bytes)",
+            "backup": str(backup_path),
+        }
+    except Exception:
+        # Restore backup on failure
+        if backup_path.exists():
+            shutil.copy2(backup_path, db_path)
+        raise
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
