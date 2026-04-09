@@ -674,7 +674,7 @@ let taxonomy = {};
 const PAGE_SIZE = 50;
 const state = {
   resultsLoaded: false, gapsLoaded: false, graphLoaded: false,
-  reviewLoaded: false, reviewCurrent: null, reviewSkipOffset: 0, hrLoaded: false,
+  reviewCurrent: null, reviewSkipOffset: 0, hrLoaded: false,
   links: { loaded: false, offset: 0, total: 0 },
   crossrefsLoaded: false,
   papers: { offset: 0, total: 0, filter: '', loaded: false },
@@ -688,7 +688,7 @@ function showSection(id) {
   document.querySelectorAll('.nav-row a').forEach(a => a.classList.remove('active'));
   document.querySelector(`.nav-row a[data-tab="${id}"]`).classList.add('active');
 
-  if (id === 'review' && !state.reviewLoaded) loadReview();
+  if (id === 'review') { state.reviewSkipOffset = 0; loadReview(); }
   if (id === 'humanreviewed' && !state.hrLoaded) loadHumanReviewed();
   if (id === 'results' && !state.resultsLoaded) loadResults();
   if (id === 'papers' && !state.papers.loaded) loadClassified('papers', 'paper');
@@ -1144,7 +1144,6 @@ async function loadResults() {
 
 // ── Review Disagreements ──
 async function loadReview() {
-  state.reviewLoaded = true;
   await updateReviewStats();
   await loadNextReview();
 }
@@ -1403,39 +1402,67 @@ function skipReview() {
 }
 
 async function submitReview() {
-  let finalChoice;
-  if (reviewChoice === 'custom') {
-    finalChoice = {
-      primary: +document.getElementById('custom-primary').value,
-      secondary: +document.getElementById('custom-secondary').value,
-      tertiary: +document.getElementById('custom-tertiary').value
+  const btn = document.getElementById('submit-btn');
+  const originalText = btn.innerHTML;
+  
+  // Disable button and show loading state
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+  btn.innerHTML = '⏳ Submitting...';
+  
+  try {
+    let finalChoice;
+    if (reviewChoice === 'custom') {
+      finalChoice = {
+        primary: +document.getElementById('custom-primary').value,
+        secondary: +document.getElementById('custom-secondary').value,
+        tertiary: +document.getElementById('custom-tertiary').value
+      };
+    } else {
+      finalChoice = reviewChoice;
+    }
+    
+    const note = document.getElementById('review-note').value || undefined;
+    const body = {
+      serial_number: state.reviewCurrent.document.serial_number,
+      ...finalChoice,
+      note
     };
-  } else {
-    finalChoice = reviewChoice;
-  }
-  
-  const note = document.getElementById('review-note').value || undefined;
-  const body = {
-    serial_number: state.reviewCurrent.document.serial_number,
-    ...finalChoice,
-    note
-  };
-  
-  const response = await fetch('/review/resolve', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  
-  if (response.ok) {
-    state.reviewSkipOffset = 0;
-    reviewChoice = null;
-    state.hrLoaded = false;
-    await updateReviewStats();
-    await loadNextReview();
-  } else {
-    const error = await response.json();
-    alert('Error: ' + error.detail);
+    
+    const response = await fetch('/review/resolve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    
+    if (response.ok) {
+      // Show success state briefly
+      btn.innerHTML = '✓ Saved!';
+      btn.style.background = 'var(--green)';
+      btn.style.borderColor = 'var(--green)';
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      reviewChoice = null;
+      state.hrLoaded = false;
+      await updateReviewStats();
+      await loadNextReview();
+    } else {
+      const error = await response.json();
+      alert('Error: ' + error.detail);
+      
+      // Reset button on error
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.innerHTML = originalText;
+    }
+  } catch (err) {
+    alert('Network error: ' + err.message);
+    
+    // Reset button on error
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.innerHTML = originalText;
   }
 }
 
